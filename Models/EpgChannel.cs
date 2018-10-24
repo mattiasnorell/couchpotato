@@ -1,6 +1,6 @@
 using System.Xml.Serialization;
 
-namespace M3uFixer.Models
+namespace Couchpotato.Models
 {
     public class EpgChannel{
         [XmlAttribute(AttributeName="id")]

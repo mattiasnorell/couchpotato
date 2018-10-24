@@ -1,4 +1,4 @@
-namespace M3uFixer.Models
+namespace Couchpotato.Models
 {
     public class Channel{
         public string TvgId{get;set;}

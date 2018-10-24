@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Xml.Serialization;
 
-namespace M3uFixer.Models
+namespace Couchpotato.Models
 {
     [XmlRoot("tv")]
     public class EpgList{

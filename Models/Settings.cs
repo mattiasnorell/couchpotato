@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace M3uFixer.Models
+namespace Couchpotato.Models
 {
     public class Settings{
         public string OutputPath {get;set;} 

@@ -6,12 +6,12 @@ using Newtonsoft.Json;
 using System.Xml.Serialization;
 using System.Linq;
 using System.Text;
-using M3uFixer.Models;
+using Couchpotato.Models;
 using System.Net;
 using System.Reflection;
 using System.IO.Compression;
 
-namespace M3uFixer
+namespace Couchpotato
 {
 
     class Program
