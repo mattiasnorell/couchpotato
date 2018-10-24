@@ -22,7 +22,8 @@ Customize and aggrigate M3U and EPG files
     {
         "channelId": "Channel id",
         "epgId":"epg-channel-id",
-        "friendlyName": "Friendly name"
+        "friendlyName": "Friendly name",
+        "group":"Group title"
     }
     ]
 }
