@@ -1,6 +1,8 @@
 # Couchpotato
 Customize and aggrigate M3U and EPG files
 
+
+## Settings
 ```json
 {
     "outputPath": "Relative or absolut path to output folder",
