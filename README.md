@@ -3,7 +3,7 @@ Customize and aggrigate M3U and EPG files
 
 ## How to run
 ```
-filesorter ./path-to-settings.json
+couchpotato ./path-to-settings.json
 ```
 
 ## Settings
