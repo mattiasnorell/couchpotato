@@ -27,7 +27,7 @@ public class EpgProvider:ProviderBase, IEpgProvider{
             epgList.Programs.AddRange(epgFile.Programs);
         }    
 
-        return epgList;
+        return Filter(epgList,settings);
     }
 
     private EpgList Parse(string path)

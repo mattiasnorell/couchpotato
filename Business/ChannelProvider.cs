@@ -73,7 +73,16 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
             if(parseChannels){
                 var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
                 if(channelSetting != null){
-                    streams.Add(MapChannel(tvgName, item, file[i + 1], channelSetting, settings));
+                    var channel = new Channel();
+                    channel.TvgName = tvgName;
+                    channel.GroupTitle = channelSetting.Group ?? settings.DefaultChannelGroup;
+                    channel.FriendlyName = channelSetting.FriendlyName;
+                    channel.TvgId =  GetValueForAttribute(item, "tvg-id");
+                    channel.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
+                    channel.Url =  file[i + 1];
+                    channel.Order = settings.Channels.IndexOf(channelSetting);
+                    
+                    streams.Add(channel);
                 }
             }
 
@@ -81,7 +90,16 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
                 var groupTitle = GetValueForAttribute(item, "group-title");
                 var group = settings.Groups.FirstOrDefault(e => e.GroupId == groupTitle);
                 if(group != null){
-                    streams.Add(MapGroup(tvgName, groupTitle, item, file[i + 1], group, settings));
+                    var groupItem = new Channel();
+                    groupItem.TvgName = tvgName;
+                    groupItem.GroupTitle = group.FriendlyName ?? groupTitle;
+                    groupItem.FriendlyName =  groupItem.FriendlyName;
+                    groupItem.TvgId =  GetValueForAttribute(item, "tvg-id");
+                    groupItem.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
+                    groupItem.Url =  file[i + 1];
+                    groupItem.Order = settings.Channels.Count() + settings.Groups.IndexOf(group);
+
+                    streams.Add(groupItem);
                 }
             }
 
@@ -89,32 +107,5 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
         }
 
         return streams;
-    }
-
-     private Channel MapChannel(string tvgName, string item, string url, SettingsChannel channelSetting, Settings settings){
-        var channel = new Channel();
-        channel.TvgName = tvgName;
-        channel.GroupTitle = channelSetting.Group ?? settings.DefaultChannelGroup;
-        channel.FriendlyName = channelSetting.FriendlyName;
-        channel.TvgId =  GetValueForAttribute(item, "tvg-id");
-        channel.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
-        channel.Url =  url;
-        channel.Order = settings.Channels.IndexOf(channelSetting);
-
-        return channel;
-    }
-
-    private Channel MapGroup(string tvgName, string groupTitle, string item, string url, SettingsGroup settingsGroup, Settings settings){
-        
-        var groupItem = new Channel();
-        groupItem.TvgName = tvgName;
-        groupItem.GroupTitle = settingsGroup.FriendlyName ?? groupTitle;
-        groupItem.FriendlyName =  groupItem.FriendlyName;
-        groupItem.TvgId =  GetValueForAttribute(item, "tvg-id");
-        groupItem.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
-        groupItem.Url =  url;
-        groupItem.Order = settings.Channels.Count() + settings.Groups.IndexOf(settingsGroup);
-
-        return groupItem;
     }
 }
