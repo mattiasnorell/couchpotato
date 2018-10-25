@@ -36,37 +36,12 @@ namespace Couchpotato
             WriteEpgFile(outputEpgPath, filteredEpgFile);
             
 
-            if(settings.Gzip){
+            if(settings.Compress){
                 Compress(outputM3uPath);
                 Compress(outputEpgPath);
             }
 
             Console.WriteLine("Done!");
-        }
-
-        static void Compress(string path){
-
-            FileInfo sourceFile = new FileInfo(path);
-            FileInfo targetFileName = new FileInfo($"{sourceFile.FullName}.gz");
-                        
-            using (FileStream sourceFileStream = sourceFile.OpenRead())
-            {
-                using (FileStream targetFileStream = targetFileName.Create())
-                    {
-                    using (GZipStream gzipStream = new GZipStream(targetFileStream, CompressionMode.Compress))
-                    {
-                        try
-                        {
-                            sourceFileStream.CopyTo(gzipStream);
-                            Console.WriteLine($"Saving compressed file to {targetFileName}");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Compression failed - {ex.Message}");
-                        }
-                    }
-                }
-            }
         }
 
         static EpgList LoadEpgFiles(string[] paths){
@@ -142,6 +117,33 @@ namespace Couchpotato
             return epgFile;
         }
 
+        static Channel MapChannel(string tvgName, string item, string url, SettingsChannel channelSetting, Settings settings){
+            var channel = new Channel();
+            channel.TvgName = tvgName;
+            channel.GroupTitle = channelSetting.Group ?? settings.DefaultChannelGroup;
+            channel.FriendlyName = channelSetting.FriendlyName;
+            channel.TvgId =  GetValueForAttribute(item, "tvg-id");
+            channel.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
+            channel.Url =  url;
+            channel.Order = settings.Channels.IndexOf(channelSetting);
+
+            return channel;
+        }
+
+        static Channel MapGroup(string tvgName, string groupTitle, string item, string url, SettingsGroup settingsGroup, Settings settings){
+            
+            var groupItem = new Channel();
+            groupItem.TvgName = tvgName;
+            groupItem.GroupTitle = settingsGroup.FriendlyName ?? groupTitle;
+            groupItem.FriendlyName =  groupItem.FriendlyName;
+            groupItem.TvgId =  GetValueForAttribute(item, "tvg-id");
+            groupItem.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
+            groupItem.Url =  url;
+            groupItem.Order = settings.Channels.Count() + settings.Groups.IndexOf(settingsGroup);
+
+            return groupItem;
+        }
+
         static List<Channel> ParseChannelList(string[] file, Settings settings){
             var streams = new List<Channel>();
             var numberOfLines = file.Length;
@@ -161,16 +163,7 @@ namespace Couchpotato
                 if(parseChannels){
                     var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
                     if(channelSetting != null){
-                        var channel = new Channel();
-                        channel.TvgName = tvgName;
-                        channel.GroupTitle = channelSetting.Group ?? settings.DefaultChannelGroup;
-                        channel.FriendlyName = channelSetting.FriendlyName;
-                        channel.TvgId =  GetValueForAttribute(item, "tvg-id");
-                        channel.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
-                        channel.Url =  file[i + 1];
-                        channel.Order = settings.Channels.IndexOf(channelSetting);
-
-                        streams.Add(channel);
+                        streams.Add(MapChannel(tvgName, item, file[i + 1], channelSetting, settings));
                     }
                 }
 
@@ -178,16 +171,7 @@ namespace Couchpotato
                     var groupTitle = GetValueForAttribute(item, "group-title");
                     var group = settings.Groups.FirstOrDefault(e => e.GroupId == groupTitle);
                     if(group != null){
-                        var groupItem = new Channel();
-                        groupItem.TvgName = tvgName;
-                        groupItem.GroupTitle = group.FriendlyName ?? groupTitle;
-                        groupItem.FriendlyName =  tvgName;
-                        groupItem.TvgId =  GetValueForAttribute(item, "tvg-id");
-                        groupItem.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
-                        groupItem.Url =  file[i + 1];
-                        groupItem.Order = settings.Channels.Count() + settings.Groups.IndexOf(group);
-
-                        streams.Add(groupItem);
+                        streams.Add(MapGroup(tvgName, groupTitle, item, file[i + 1], group, settings));
                     }
                 }
 
@@ -287,6 +271,31 @@ namespace Couchpotato
 
             writer.Serialize(file, epgList);  
             file.Close();  
+        }
+
+        static void Compress(string path){
+
+            FileInfo sourceFile = new FileInfo(path);
+            FileInfo targetFileName = new FileInfo($"{sourceFile.FullName}.gz");
+                        
+            using (FileStream sourceFileStream = sourceFile.OpenRead())
+            {
+                using (FileStream targetFileStream = targetFileName.Create())
+                    {
+                    using (GZipStream gzipStream = new GZipStream(targetFileStream, CompressionMode.Compress))
+                    {
+                        try
+                        {
+                            sourceFileStream.CopyTo(gzipStream);
+                            Console.WriteLine($"Saving compressed file to {targetFileName}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Compression failed - {ex.Message}");
+                        }
+                    }
+                }
+            }
         }
     }
 }

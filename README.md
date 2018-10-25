@@ -1,6 +1,10 @@
 # Couchpotato
 Customize and aggrigate M3U and EPG files
 
+## How to run
+```
+filesorter ./path-to-settings.json
+```
 
 ## Settings
 ```json
@@ -12,7 +16,7 @@ Customize and aggrigate M3U and EPG files
         "Path to epg source 2",
         "etc..."
     ],
-    "gzip": true,
+    "compress": true,
     "defaultChannelGroup": "Group title",
     "groups": [
        "Group title 1",
