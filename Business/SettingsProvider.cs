@@ -14,6 +14,13 @@ public class SettingsProvider : ISettingsProvider
         Console.WriteLine("Loading settings from " + path);
         Settings settings;
 
+        if(!File.Exists(path)){
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"- Couldn't find file {path}");
+            Console.ForegroundColor = ConsoleColor.White;
+            return null;
+        }
+
         using (StreamReader responseReader = new StreamReader(path))
         {
             string response = responseReader.ReadToEnd();

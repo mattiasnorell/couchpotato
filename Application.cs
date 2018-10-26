@@ -1,15 +1,8 @@
+
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using Newtonsoft.Json;
-using System.Xml.Serialization;
 using System.Linq;
-using System.Text;
-using Couchpotato.Models;
-using System.Net;
-using System.Reflection;
-using System.IO.Compression;
+
 class Application: IApplication{
     private readonly ISettingsProvider settingsProvider;
     private readonly IChannelProvider channelProvider;
@@ -25,11 +18,26 @@ class Application: IApplication{
 
     public void Run(string settingsPath){
         var settings = settingsProvider.Load(settingsPath);
+
+        if(settings == null){
+            Console.WriteLine($"\nNeed settings. Please fix. Thanks.");
+            
+            Environment.Exit(0);
+        }
+
         var channels = channelProvider.Load(settings.M3uPath, settings);
+
+        if(!channels.Any()){
+            Console.WriteLine($"\nNo channels found so no reason to continue. Bye bye.");
+            
+            Environment.Exit(0);
+        }
+
         var epgFile = epgProvider.Load(settings.EpgPath, settings);
         var outputPath = settings.OutputPath ?? "./";
-
+       
         if(!Directory.Exists(outputPath)){
+            Console.WriteLine($"Couldn't find output folder, creating it at {outputPath}!");
             Directory.CreateDirectory(outputPath); 
         }
 

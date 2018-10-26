@@ -18,6 +18,14 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
 
             var result = DownloadFile(path);
             var list  = new List<string>();
+
+            if(result == null){
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"- Couldn't download file {path}");
+                Console.ForegroundColor = ConsoleColor.White;
+                return new List<Channel>();
+            }
+            
             using (var sr = new StreamReader(result))
             {
                 string line;
@@ -32,12 +40,19 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
         }else{
             Console.WriteLine($"Loading local channel list from {path}");
 
+            if(!File.Exists(path)){
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"- Couldn't find file {path}");
+                Console.ForegroundColor = ConsoleColor.White;
+                return new List<Channel>();
+            }
+
             return Parse(File.ReadAllLines(path), settings);
         }
     }
 
     public void Save(string path, List<Channel> channels){
-        Console.WriteLine($"\nWriting M3U-file to {path}"); 
+        Console.WriteLine($"Writing M3U-file to {path}"); 
 
         using (System.IO.StreamWriter writeFile =  new System.IO.StreamWriter(path, false, new UTF8Encoding(true))) {
             writeFile.WriteLine("#EXTM3U");
@@ -103,7 +118,7 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
                 }
             }
 
-            Console.Write("\rCrunching channel data: " + ((decimal)i / (decimal)numberOfLines).ToString("0%"));
+            Console.Write($"\rCrunching channel data: {((decimal)i / (decimal)numberOfLines).ToString("0%")}");
         }
 
         return streams;

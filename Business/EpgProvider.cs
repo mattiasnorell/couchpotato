@@ -23,6 +23,13 @@ public class EpgProvider:ProviderBase, IEpgProvider{
         foreach(var path in paths){
             var epgFile = Parse(path);
 
+            if(epgFile == null){
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"- Couldn't download file {path}");
+                Console.ForegroundColor = ConsoleColor.White;
+                continue;
+            }
+
             epgList.Channels.AddRange(epgFile.Channels);
             epgList.Programs.AddRange(epgFile.Programs);
         }    
@@ -38,6 +45,10 @@ public class EpgProvider:ProviderBase, IEpgProvider{
         XmlSerializer serializer = new XmlSerializer(typeof(EpgList), xRoot);
 
         using(var stream = GetSource(path)){
+            if(stream == null){
+                return null;
+            }
+
             return (EpgList)serializer.Deserialize(stream);          
         };
     }
@@ -50,6 +61,11 @@ public class EpgProvider:ProviderBase, IEpgProvider{
             
         }else{
             Console.WriteLine($"- Reading local EPG from {path}");
+
+            if(!File.Exists(path)){
+                return null;
+            }
+
             return new FileStream(path, FileMode.Open);
 
         }
@@ -94,6 +110,8 @@ public class EpgProvider:ProviderBase, IEpgProvider{
                 epgFile.Programs.Add(epgProgram);
             }
         }
+
+        Console.Write("\n");
 
         return epgFile;
     }

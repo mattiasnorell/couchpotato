@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -7,7 +8,12 @@ public class ProviderBase
     public Stream DownloadFile(string path){
         using (var client = new WebClient())
         {
-            return client.OpenRead(path);
+            try{
+                return client.OpenRead(path);
+            }catch (Exception)
+            {
+                return null;
+            }
         }
     }
 
