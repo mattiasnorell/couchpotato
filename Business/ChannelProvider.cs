@@ -90,7 +90,7 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
                 if(channelSetting != null){
                     var channel = new Channel();
                     channel.TvgName = tvgName;
-                    channel.GroupTitle = channelSetting.Group ?? settings.DefaultChannelGroup;
+                    channel.GroupTitle = channelSetting.CustomGroupName ?? settings.DefaultChannelGroup;
                     channel.FriendlyName = channelSetting.FriendlyName;
                     channel.TvgId =  GetValueForAttribute(item, "tvg-id");
                     channel.TvgLogo =  GetValueForAttribute(item, "tvg-logo");

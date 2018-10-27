@@ -33,7 +33,7 @@ couchpotato ./path-to-settings.json
         "channelId": "Channel id",
         "epgId":"epg-channel-id",
         "friendlyName": "Friendly name",
-        "group":"Group title"
+        "customGroupName":"Group title"
     }
     ]
 }
