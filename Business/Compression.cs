@@ -6,26 +6,31 @@ public class Compression : ICompression
 {
     public void Compress(string path)
     {
-         FileInfo sourceFile = new FileInfo(path);
-            FileInfo targetFileName = new FileInfo($"{sourceFile.FullName}.gz");
-                        
-            using (FileStream sourceFileStream = sourceFile.OpenRead())
-            {
-                using (FileStream targetFileStream = targetFileName.Create())
+        FileInfo sourceFile = new FileInfo(path);
+        FileInfo targetFileName = new FileInfo($"{sourceFile.FullName}.gz");
+                    
+        using (FileStream sourceFileStream = sourceFile.OpenRead())
+        {
+            using (FileStream targetFileStream = targetFileName.Create())
+                {
+                using (GZipStream gzipStream = new GZipStream(targetFileStream, CompressionMode.Compress))
+                {
+                    try
                     {
-                    using (GZipStream gzipStream = new GZipStream(targetFileStream, CompressionMode.Compress))
+                        sourceFileStream.CopyTo(gzipStream);
+                        Console.WriteLine($"Saving compressed file to {targetFileName}");
+                    }
+                    catch (Exception ex)
                     {
-                        try
-                        {
-                            sourceFileStream.CopyTo(gzipStream);
-                            Console.WriteLine($"Saving compressed file to {targetFileName}");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Compression failed - {ex.Message}");
-                        }
+                        Console.WriteLine($"Compression failed - {ex.Message}");
                     }
                 }
             }
+        }
     }
+
+    public Stream Decompress(Stream originalFileStream){
+        return new GZipStream(originalFileStream, CompressionMode.Decompress);
+    }
+    
 }

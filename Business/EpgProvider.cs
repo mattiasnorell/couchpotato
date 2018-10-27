@@ -6,9 +6,10 @@ using System.Xml.Serialization;
 using Couchpotato.Models;
 
 public class EpgProvider:ProviderBase, IEpgProvider{
+    private readonly ICompression compression;
 
-    public EpgProvider(){
-        
+    public EpgProvider(ICompression compression){
+        this.compression = compression;
     }
 
     public EpgList Load(string[] paths, Settings settings){
@@ -57,7 +58,14 @@ public class EpgProvider:ProviderBase, IEpgProvider{
      private Stream GetSource(string path){
         if(path.StartsWith("http")){
             Console.WriteLine($"- Downloading EPG from {path}");
-            return DownloadFile(path);
+            var file = DownloadFile(path);
+
+            if(path.EndsWith(".gz")){
+                Console.WriteLine($"- Decompressed file");
+                return compression.Decompress(file);
+            }
+
+            return file;
             
         }else{
             Console.WriteLine($"- Reading local EPG from {path}");
@@ -66,8 +74,15 @@ public class EpgProvider:ProviderBase, IEpgProvider{
                 return null;
             }
 
-            return new FileStream(path, FileMode.Open);
+            var file =  new FileStream(path, FileMode.Open);
 
+            if(path.EndsWith(".gz")){
+                Console.WriteLine($"- Decompressed file");
+                return compression.Decompress(file);
+            }
+
+            return file;
+           
         }
     }
 
