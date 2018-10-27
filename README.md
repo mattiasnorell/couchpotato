@@ -9,7 +9,7 @@ couchpotato ./path-to-settings.json
 ## Settings
 ```json
 {
-    "outputPath": "Relative or absolut path to output folder",
+    "outputPath": "Relative or absolute path to output folder",
     "m3uPath": "Path to m3u source",
     "epgPath" : [
         "Path to epg source 1",
