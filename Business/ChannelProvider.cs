@@ -102,8 +102,10 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
             }
 
             if(parseGroups){
+
                 var groupTitle = GetValueForAttribute(item, "group-title");
                 var group = settings.Groups.FirstOrDefault(e => e.GroupId == groupTitle);
+                
                 if(group != null){
                     var groupItem = new Channel();
                     groupItem.TvgName = tvgName;
@@ -114,7 +116,9 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
                     groupItem.Url =  file[i + 1];
                     groupItem.Order = settings.Channels.Count() + settings.Groups.IndexOf(group);
 
-                    streams.Add(groupItem);
+                    if(!group.Exclude.Any(e => e == tvgName)){
+                        streams.Add(groupItem);
+                    }
                 }
             }
 

@@ -19,8 +19,14 @@ couchpotato ./path-to-settings.json
     "compress": true,
     "defaultChannelGroup": "Group title",
     "groups": [
-       "Group title 1",
-       "Group title 2"
+       {
+        "groupId": "Group id",
+        "friendlyName": "Friendly name",
+        "exclude": [
+                "tvg-name",
+                "tvg-name"
+            ]
+        }
     ],
     "channels": [
     {
