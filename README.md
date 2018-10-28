@@ -39,12 +39,12 @@ couchpotato ./path-to-settings.json
 }
 ```
 
-| Property        | Description           |
-| ------------- |-------------:|
-| outputPath      | Where the generated files will be saved. Path can be either relative or absolute. |
-| m3uPath      | Path to the source m3u-file. Can be either relative or absolute. |
-| epgPath | List of EPG-files. Can be either local (relative or absolute) or http path. |
-| compress | If you want the output files to be compressed. |
-| defaultChannelGroup      | . |
-| groups      | Import all items from a group. |
-| channels | Import individual items. |
+| Property        | Description           | Type           | Required           |
+| ------------- |:------------|:------------|:------------|:------------|
+| outputPath      | Local path to where the generated files will be saved. Path can be either relative or absolute. | String | Yes |
+| m3uPath      | Path to the source m3u-file. Local or http(s). | String | Yes |
+| epgPath | List of EPG-files (.xml or .xml.gz). Can be either local (relative or absolute) or http(s) path.| No |
+| compress | If you want the output files to be compressed. | Boolean | No |
+| defaultChannelGroup      | The groupname used for all channels without a groupname or the "CustomChannelGroup" property.  | String | No |
+| groups      | Import all items from a group. | Array | No |
+| channels | Import individual items. | Array | No |
