@@ -116,9 +116,11 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
                     groupItem.Url =  file[i + 1];
                     groupItem.Order = settings.Channels.Count() + settings.Groups.IndexOf(group);
 
-                    if(group.Exclude != null && !group.Exclude.Any(e => e == tvgName)){
-                        streams.Add(groupItem);
+                    if(group.Exclude != null && group.Exclude.Any(e => e == tvgName)){
+                        continue;
                     }
+
+                    streams.Add(groupItem);
                 }
             }
 
