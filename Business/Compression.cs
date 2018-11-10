@@ -30,7 +30,15 @@ public class Compression : ICompression
     }
 
     public Stream Decompress(Stream originalFileStream){
-        return new GZipStream(originalFileStream, CompressionMode.Decompress);
+        try{
+            return new GZipStream(originalFileStream, CompressionMode.Decompress);
+        }catch(Exception ex){
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($" - Decompression failed - {ex.Message}");
+            Console.ForegroundColor = ConsoleColor.White;
+            
+            return null;
+        }
     }
     
 }
