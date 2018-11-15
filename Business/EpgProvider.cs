@@ -2,14 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 using Couchpotato.Models;
 
-public class EpgProvider:ProviderBase, IEpgProvider{
-    private readonly ICompression compression;
+public class EpgProvider: IEpgProvider{
+    private readonly IFileHandler fileHandler;
 
-    public EpgProvider(ICompression compression){
-        this.compression = compression;
+    public EpgProvider(IFileHandler fileHandler){
+        this.fileHandler = fileHandler;
     }
 
     public EpgList Load(string[] paths, Settings settings){
@@ -45,45 +46,13 @@ public class EpgProvider:ProviderBase, IEpgProvider{
         xRoot.IsNullable = true;
         XmlSerializer serializer = new XmlSerializer(typeof(EpgList), xRoot);
 
-        using(var stream = GetSource(path)){
+        using(var stream = this.fileHandler.GetSource(path)){
             if(stream == null){
                 return null;
             }
 
             return (EpgList)serializer.Deserialize(stream);          
         };
-    }
-
-
-     private Stream GetSource(string path){
-        if(path.StartsWith("http")){
-            Console.WriteLine($"- Downloading EPG from {path}");
-            var file = DownloadFile(path);
-
-            if(path.EndsWith(".gz")){
-                Console.WriteLine($"- Decompressed file");
-                return compression.Decompress(file);
-            }
-
-            return file;
-            
-        }else{
-            Console.WriteLine($"- Reading local EPG from {path}");
-
-            if(!File.Exists(path)){
-                return null;
-            }
-
-            var file =  new FileStream(path, FileMode.Open);
-
-            if(path.EndsWith(".gz")){
-                Console.WriteLine($"- Decompressed file");
-                return compression.Decompress(file);
-            }
-
-            return file;
-           
-        }
     }
 
     private EpgList Filter(EpgList input, Settings settings){
@@ -132,11 +101,12 @@ public class EpgProvider:ProviderBase, IEpgProvider{
     }
 
     public void Save(string path, EpgList epgList){
-      Console.WriteLine($"Writing EPG-file to {path}"); 
+        Console.WriteLine($"Writing EPG-file to {path}"); 
         System.Xml.Serialization.XmlSerializer writer =  new System.Xml.Serialization.XmlSerializer(typeof(EpgList));  
         System.IO.FileStream file = System.IO.File.Create(path);  
 
         writer.Serialize(file, epgList);  
         file.Close(); 
     }
+    
 }

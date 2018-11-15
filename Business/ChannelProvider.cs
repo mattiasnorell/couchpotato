@@ -3,52 +3,42 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Couchpotato.Models;
 
-public class ChannelProvider:ProviderBase, IChannelProvider{
+public class ChannelProvider: IChannelProvider{
     private readonly ISettingsProvider settingsProvider;
+    private readonly IFileHandler fileHandler;
 
-    public ChannelProvider(ISettingsProvider settingsProvider){
+    public ChannelProvider(ISettingsProvider settingsProvider, IFileHandler fileHandler) {
         this.settingsProvider = settingsProvider;
+        this.fileHandler = fileHandler;
     }
 
     public List<Channel> Load(string path, Settings settings){
-        if(path.StartsWith("http")){
-            Console.WriteLine("Downloading channel list");
 
-            var result = DownloadFile(path);
-            var list  = new List<string>();
+        Console.WriteLine("Loading channel list");
+        var result = this.fileHandler.GetSource(path);
 
-            if(result == null){
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"- Couldn't download file {path}");
-                Console.ForegroundColor = ConsoleColor.White;
-                return new List<Channel>();
-            }
-            
-            using (var sr = new StreamReader(result))
-            {
-                string line;
-                while ((line = sr.ReadLine()) != null)
-                {
-                    list.Add(line);
-                }
-            }
-
-            return Parse(list.ToArray(), settings);
-            
-        }else{
-            Console.WriteLine($"Loading local channel list from {path}");
-
-            if(!File.Exists(path)){
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"- Couldn't find file {path}");
-                Console.ForegroundColor = ConsoleColor.White;
-                return new List<Channel>();
-            }
-
-            return Parse(File.ReadAllLines(path), settings);
+        if(result == null){
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"- Couldn't load file from {path}");
+            Console.ForegroundColor = ConsoleColor.White;
+            return new List<Channel>();
         }
+
+        var list  = new List<string>();
+                    
+        using (var sr = new StreamReader(result))
+        {
+            string line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                list.Add(line);
+            }
+        }
+
+        return Parse(list.ToArray(), settings);
     }
 
     public void Save(string path, List<Channel> channels){
@@ -128,5 +118,15 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
         }
 
         return streams;
+    }
+
+    private string GetValueForAttribute(string item, string attributeName){
+        var result = new Regex(attributeName + @"=\""([^""]*)\""", RegexOptions.Singleline).Match(item);
+        
+        if(result == null || result.Groups.Count < 1){
+            return string.Empty;
+        }
+        
+        return result.Groups[1].Value;
     }
 }
