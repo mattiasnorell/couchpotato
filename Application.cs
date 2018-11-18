@@ -25,7 +25,7 @@ class Application: IApplication{
             Environment.Exit(0);
         }
 
-        var channels = channelProvider.Load(settings.M3uPath, settings);
+        var channels = channelProvider.GetChannels(settings.M3uPath, settings);
 
         if(!channels.Any()){
             Console.WriteLine($"\nNo channels found so no reason to continue. Bye bye.");

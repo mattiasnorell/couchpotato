@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using Couchpotato.Models;
 
@@ -12,7 +13,36 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
         this.settingsProvider = settingsProvider;
     }
 
-    public List<Channel> Load(string path, Settings settings){
+    public List<Channel> GetChannels(string path, Settings settings){
+        var channelFile = Load(path);
+        var channelHashTabel = Parse(channelFile);
+
+        if(settings.ValidateChannels){
+            // TODO: Implement validation
+        }
+
+        return channelHashTabel;
+    }
+
+    private bool CheckChannelAvailability(string url){
+        var request  = (HttpWebRequest)WebRequest.Create(url);
+        request.Method = "GET";
+        const int maxBytes = 1024;
+        request.AddRange(0, maxBytes-1);
+
+        try{
+            using(WebResponse response = request.GetResponse()){
+                request.Abort();
+                return true;
+            }
+        }catch(Exception ex){
+            return false;
+        }
+
+        return false;
+    }
+
+    private string[] Load(string path){
         if(path.StartsWith("http")){
             Console.WriteLine("Downloading channel list");
 
@@ -23,7 +53,7 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"- Couldn't download file {path}");
                 Console.ForegroundColor = ConsoleColor.White;
-                return new List<Channel>();
+                return list.ToArray();
             }
             
             using (var sr = new StreamReader(result))
@@ -35,7 +65,7 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
                 }
             }
 
-            return Parse(list.ToArray(), settings);
+            return list.ToArray();
             
         }else{
             Console.WriteLine($"Loading local channel list from {path}");
@@ -44,10 +74,10 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"- Couldn't find file {path}");
                 Console.ForegroundColor = ConsoleColor.White;
-                return new List<Channel>();
+                return new string[]{};
             }
 
-            return Parse(File.ReadAllLines(path), settings);
+            return File.ReadAllLines(path);
         }
     }
 
@@ -66,14 +96,14 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
         }
     }
 
-     private List<Channel> Parse(string[] file, Settings settings)
+    private List<Channel> Parse(string[] file)
     {
         var streams = new List<Channel>();
         var numberOfLines = file.Length;
-        var settingChannels = settings.Channels;
+    //    var settingChannels = settings.Channels;
         
-        var parseChannels = settings.Channels.Any();
-        var parseGroups = settings.Groups.Any();
+  //      var parseChannels = settings.Channels.Any();
+//        var parseGroups = settings.Groups.Any();
 
         for (var i = 1; i < numberOfLines; i = i + 2)
         {
@@ -83,9 +113,16 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
                 continue;
             } 
 
-            var tvgName = GetValueForAttribute(item, "tvg-name");
-
-            if(parseChannels){
+            var channel = new Channel();
+            channel.TvgName = GetValueForAttribute(item, "tvg-name");
+            channel.GroupTitle = GetValueForAttribute(item, "group-title");
+            channel.TvgId =  GetValueForAttribute(item, "tvg-id");
+            channel.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
+            channel.Url =  file[i + 1];
+            
+            streams.Add(channel);
+                    
+          /*   if(parseChannels){
                 var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
                 if(channelSetting != null){
                     var channel = new Channel();
@@ -97,7 +134,9 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
                     channel.Url =  file[i + 1];
                     channel.Order = settings.Channels.IndexOf(channelSetting);
                     
-                    streams.Add(channel);
+                    if(CheckChannelAvailability(channel.Url)){
+                        streams.Add(channel);
+                    }
                 }
             }
 
@@ -123,7 +162,7 @@ public class ChannelProvider:ProviderBase, IChannelProvider{
                     streams.Add(groupItem);
                 }
             }
-
+*/
             Console.Write($"\rCrunching channel data: {((decimal)i / (decimal)numberOfLines).ToString("0%")}");
         }
 
