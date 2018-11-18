@@ -12,6 +12,7 @@ namespace Couchpotato
             builder.RegisterType<Compression>().As<ICompression>();
             builder.RegisterType<ChannelProvider>().As<IChannelProvider>();
             builder.RegisterType<EpgProvider>().As<IEpgProvider>();
+            builder.RegisterType<FileHandler>().As<IFileHandler>();
             builder.RegisterType<SettingsProvider>().As<ISettingsProvider>();
             
             var container = builder.Build();

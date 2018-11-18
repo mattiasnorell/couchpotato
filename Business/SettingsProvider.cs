@@ -7,27 +7,31 @@ using System.Text;
 using Couchpotato.Models;
 using Newtonsoft.Json;
 
-public class SettingsProvider : ISettingsProvider
+public class SettingsProvider :  ISettingsProvider
 {
+    private readonly IFileHandler fileHandler;
+
+    public SettingsProvider(IFileHandler fileHandler){
+        this.fileHandler = fileHandler;
+    }
+
      public Settings Load(string path)
     {
         Console.WriteLine("Loading settings from " + path);
-        Settings settings;
+        
+        var file = this.fileHandler.GetSource(path);
 
-        if(!File.Exists(path)){
+        if(file == null){
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"- Couldn't find file {path}");
+            Console.WriteLine($"- Couldn't load settingsfile from {path}");
             Console.ForegroundColor = ConsoleColor.White;
             return null;
         }
 
-        using (StreamReader responseReader = new StreamReader(path))
-        {
-            string response = responseReader.ReadToEnd();
-            settings = JsonConvert.DeserializeObject<Settings>(response);
+        using (StreamReader responseReader = new StreamReader(file))
+            {
+            var response = responseReader.ReadToEnd();
+            return JsonConvert.DeserializeObject<Settings>(response);
         }
-
-        return settings;
     }
-
 }

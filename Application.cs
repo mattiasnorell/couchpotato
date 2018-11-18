@@ -17,6 +17,8 @@ class Application: IApplication{
     }
 
     public void Run(string settingsPath){
+        var startTime = DateTime.Now;
+
         var settings = settingsProvider.Load(settingsPath);
 
         if(settings == null){
@@ -53,6 +55,9 @@ class Application: IApplication{
             compression.Compress(outputEpgPath);
         }
 
-        Console.WriteLine("Done!");
+        var endTime = DateTime.Now;
+        var timeTaken = (endTime - startTime).TotalSeconds;
+
+        Console.WriteLine($"Done! It took {timeTaken} seconds.");
     }         
 }
