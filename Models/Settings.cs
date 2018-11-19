@@ -7,6 +7,7 @@ namespace Couchpotato.Models
         public string M3uPath{get;set;} 
         public bool Compress{get;set;}
         public bool ValidateStreams{ get; set; }
+        public List<SettingsFallbackChannel> DefaultChannelFallbacks{get;set;}
         public string[] EpgPath{get;set;}
         public string DefaultChannelGroup{get;set;}
         public List<SettingsChannel> Channels{get;set;}

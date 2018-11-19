@@ -42,14 +42,16 @@ namespace Couchpotato.Business{
                 if(invalidStreams != null && invalidStreams.Count > 0){
                     Console.WriteLine("\nBroken streams found, trying to find fallback channels");
 
-                    foreach(var invalidStreamTvgName in invalidStreams){
-                        var fallbackChannel = GetFallbackChannel(invalidStreamTvgName, playlistItems, settings);
+                    if(settings.DefaultChannelFallbacks != null){
+                        foreach(var invalidStreamTvgName in invalidStreams){
+                            var fallbackChannel = GetFallbackChannel(invalidStreamTvgName, playlistItems, settings);
 
-                        if(fallbackChannel != null){
-                            Console.WriteLine($"- Fallback found for {invalidStreamTvgName}, now using {fallbackChannel.TvgName}");
-                            streams.Add(fallbackChannel);
-                        }else{
-                            Console.WriteLine($"- Sorry, no fallback found for {invalidStreamTvgName}");
+                            if(fallbackChannel != null){
+                                Console.WriteLine($"- Fallback found for {invalidStreamTvgName}, now using {fallbackChannel.TvgName}");
+                                streams.Add(fallbackChannel);
+                            }else{
+                                Console.WriteLine($"- Sorry, no fallback found for {invalidStreamTvgName}");
+                            }
                         }
                     }
                 }
@@ -61,6 +63,47 @@ namespace Couchpotato.Business{
         }
 
         private Channel GetFallbackChannel(string tvgName, List<PlaylistItem> playlistItems, Settings settings){
+            var specificFallback = GetChannelSpecificFallback(tvgName, playlistItems, settings);
+            if(specificFallback != null){
+                return specificFallback;
+            }
+
+            var defaultFallback = GetDefaultFallback(tvgName, playlistItems, settings);
+            if(defaultFallback != null){
+                return defaultFallback;
+            }
+
+            return null;            
+        }
+
+        private Channel GetDefaultFallback(string tvgName, List<PlaylistItem> playlistItems, Settings settings){
+            
+            var fallbackChannelTvgNames = settings.DefaultChannelFallbacks.FirstOrDefault(e => tvgName.Contains(e.Key));
+
+            if(fallbackChannelTvgNames == null || fallbackChannelTvgNames.Value == null){
+                return null;
+            }
+
+            foreach(var fallbackChannelTvgName in fallbackChannelTvgNames.Value){
+                var fallbackTvgName = tvgName.Replace(fallbackChannelTvgNames.Key, fallbackChannelTvgName);
+                var fallbackChannel = playlistItems.FirstOrDefault(e => e.TvgName == fallbackTvgName);
+
+                if(fallbackChannel != null){
+                    var isValid = this.streamValidator.ValidateStreamByUrl(fallbackChannel.Url);
+
+                    if(!isValid){
+                        continue;
+                    }
+                    
+                    var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
+                    return MapChannel(fallbackChannel, channelSetting, settings);
+                }
+            };
+
+            return null;
+        }
+
+        private Channel GetChannelSpecificFallback(string tvgName, List<PlaylistItem> playlistItems, Settings settings){
             var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
             if(channelSetting != null && channelSetting.FallbackChannels != null){
                foreach(var fallbackChannelId in channelSetting.FallbackChannels){

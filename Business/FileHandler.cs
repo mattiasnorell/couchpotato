@@ -30,7 +30,7 @@ namespace Couchpotato.Business{
                 var file = DownloadFile(path);
 
                 if(path.EndsWith(".gz")){
-                    Console.WriteLine($"- Decompressed file");
+                    Console.WriteLine($"- Decompressing file");
                     return compression.Decompress(file);
                 }
 
