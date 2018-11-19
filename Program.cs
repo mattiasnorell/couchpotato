@@ -1,11 +1,9 @@
 ﻿using Autofac;
+using Couchpotato.Business;
 
-namespace Couchpotato
-{
-    class Program
-    {
-        static void Main(string[] args)
-        {
+namespace Couchpotato{
+    class Program {
+        static void Main(string[] args) {
 
             var builder = new ContainerBuilder();
             builder.RegisterType<Application>().As<IApplication>();
@@ -14,6 +12,7 @@ namespace Couchpotato
             builder.RegisterType<EpgProvider>().As<IEpgProvider>();
             builder.RegisterType<FileHandler>().As<IFileHandler>();
             builder.RegisterType<SettingsProvider>().As<ISettingsProvider>();
+            builder.RegisterType<StreamValidator>().As<IStreamValidator>();
             
             var container = builder.Build();
 

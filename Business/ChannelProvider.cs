@@ -6,163 +6,227 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using Couchpotato.Models;
+namespace Couchpotato.Business{
+    public class ChannelProvider: IChannelProvider{
+        private readonly ISettingsProvider settingsProvider;
+        private readonly IFileHandler fileHandler;
+        private readonly IStreamValidator streamValidator;
 
-public class ChannelProvider: IChannelProvider{
-    private readonly ISettingsProvider settingsProvider;
-    private readonly IFileHandler fileHandler;
-
-    public ChannelProvider(ISettingsProvider settingsProvider, IFileHandler fileHandler) {
-        this.settingsProvider = settingsProvider;
-        this.fileHandler = fileHandler;
-    }
-
-    public List<Channel> GetChannels(string path, Settings settings){
-        var channelFile = Load(path);
-        var channelHashTabel = Parse(channelFile);
-
-        if(settings.ValidateChannels){
-            // TODO: Implement validation
+        public ChannelProvider(ISettingsProvider settingsProvider, IFileHandler fileHandler, IStreamValidator streamValidator) {
+            this.settingsProvider = settingsProvider;
+            this.fileHandler = fileHandler;
+            this.streamValidator = streamValidator;
         }
 
-        return channelHashTabel;
-    }
+        public ChannelResult GetChannels(string path, Settings settings){
+            var result = new ChannelResult();
+            var playlistFile = Load(path);
+            var playlistItems = Parse(playlistFile);
 
-    private bool CheckChannelAvailability(string url){
-        var request  = (HttpWebRequest)WebRequest.Create(url);
-        request.Method = "GET";
-        const int maxBytes = 1024;
-        request.AddRange(0, maxBytes-1);
+            var streams = new List<Channel>();
 
-        try{
-            using(WebResponse response = request.GetResponse()){
-                request.Abort();
-                return true;
+            if(settings.Channels.Any()){
+                var channels = GetSelectedChannels(playlistItems, settings);
+                streams.AddRange(channels);
             }
-        }catch(Exception ex){
-            return false;
-        }
-    }
 
-    private string[] Load(string path){
-        Console.WriteLine("Loading channel list");
-        var result = this.fileHandler.GetSource(path);
-
-        if(result == null){
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"- Couldn't download file {path}");
-            Console.ForegroundColor = ConsoleColor.White;
-            return new string[]{};
-        }
-        
-        using (var sr = new StreamReader(result))
-        {
-            string line;
-            var list = new List<string>();
+            if(settings.Groups.Any()){
+                var groups = GetSelectedGroups(playlistItems, settings);
+                streams.AddRange(groups);
+            }
             
-            while ((line = sr.ReadLine()) != null)
-            {
-                list.Add(line);
-            }
+            if(settings.ValidateStreams){
+                Console.WriteLine("\nValidating streams. This might disconnect all active streams.");
+                var invalidStreams = this.streamValidator.ValidateStreams(streams);
 
-            return list.ToArray();
-        }
-    }
+                if(invalidStreams != null && invalidStreams.Count > 0){
+                    Console.WriteLine("\nBroken streams found, trying to find fallback channels");
 
-    public void Save(string path, List<Channel> channels){
-        Console.WriteLine($"Writing M3U-file to {path}"); 
+                    foreach(var invalidStreamTvgName in invalidStreams){
+                        var fallbackChannel = GetFallbackChannel(invalidStreamTvgName, playlistItems, settings);
 
-        using (System.IO.StreamWriter writeFile =  new System.IO.StreamWriter(path, false, new UTF8Encoding(true))) {
-            writeFile.WriteLine("#EXTM3U");
-
-            foreach (Channel channel in channels.OrderBy(e => e.Order))
-            {
-                var name = channel.FriendlyName ?? channel.TvgName;
-                writeFile.WriteLine($"#EXTINF:-1 tvg-id=\"{channel.TvgId}\" tvg-name=\"{channel.TvgName}\" tvg-logo=\"{channel.TvgLogo}\" group-title=\"{channel.GroupTitle}\",{name}");
-                writeFile.WriteLine(channel.Url);
-            }
-        }
-    }
-
-    private List<Channel> Parse(string[] file)
-    {
-        var streams = new List<Channel>();
-        var numberOfLines = file.Length;
-    //    var settingChannels = settings.Channels;
-        
-  //      var parseChannels = settings.Channels.Any();
-//        var parseGroups = settings.Groups.Any();
-
-        for (var i = 1; i < numberOfLines; i = i + 2)
-        {
-            var item = file[i];
-
-            if(!item.StartsWith("#EXTINF:-1")){
-                continue;
-            } 
-
-            var channel = new Channel();
-            channel.TvgName = GetValueForAttribute(item, "tvg-name");
-            channel.GroupTitle = GetValueForAttribute(item, "group-title");
-            channel.TvgId =  GetValueForAttribute(item, "tvg-id");
-            channel.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
-            channel.Url =  file[i + 1];
-            
-            streams.Add(channel);
-                    
-          /*   if(parseChannels){
-                var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
-                if(channelSetting != null){
-                    var channel = new Channel();
-                    channel.TvgName = tvgName;
-                    channel.GroupTitle = channelSetting.CustomGroupName ?? settings.DefaultChannelGroup;
-                    channel.FriendlyName = channelSetting.FriendlyName;
-                    channel.TvgId =  GetValueForAttribute(item, "tvg-id");
-                    channel.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
-                    channel.Url =  file[i + 1];
-                    channel.Order = settings.Channels.IndexOf(channelSetting);
-                    
-                    if(CheckChannelAvailability(channel.Url)){
-                        streams.Add(channel);
+                        if(fallbackChannel != null){
+                            Console.WriteLine($"- Fallback found for {invalidStreamTvgName}, now using {fallbackChannel.TvgName}");
+                            streams.Add(fallbackChannel);
+                        }else{
+                            Console.WriteLine($"- Sorry, no fallback found for {invalidStreamTvgName}");
+                        }
                     }
                 }
             }
 
-            if(parseGroups){
+            result.Channels = streams;
 
-                var groupTitle = GetValueForAttribute(item, "group-title");
-                var group = settings.Groups.FirstOrDefault(e => e.GroupId == groupTitle);
+            return result;
+        }
+
+        private Channel GetFallbackChannel(string tvgName, List<PlaylistItem> playlistItems, Settings settings){
+            var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
+            if(channelSetting != null && channelSetting.FallbackChannels != null){
+               foreach(var fallbackChannelId in channelSetting.FallbackChannels){
+                   var fallbackChannel = playlistItems.FirstOrDefault(e => e.TvgName == fallbackChannelId);
+
+                   if(fallbackChannel != null){
+                       var isValid = this.streamValidator.ValidateStreamByUrl(fallbackChannel.Url);
+
+                        if(isValid){
+                            return MapChannel(fallbackChannel, channelSetting, settings);  
+                        }
+                   }
+               };
+            }
+
+            return null;
+        }
+
+        private Channel MapChannel(PlaylistItem playlistItem, SettingsChannel channelSetting, Settings settings){
+            var channel = new Channel();
+            channel.TvgName = playlistItem.TvgName;
+            channel.TvgId = playlistItem.TvgId;
+            channel.TvgLogo = playlistItem.TvgLogo;
+            channel.Url = playlistItem.Url;
+
+            if(!string.IsNullOrEmpty(channelSetting.CustomGroupName) || !string.IsNullOrEmpty(settings.DefaultChannelGroup)){
+                channel.GroupTitle = channelSetting.CustomGroupName ?? settings.DefaultChannelGroup;
+            }else{
+                channel.GroupTitle = playlistItem.GroupTitle;
+            }
+
+            if(!string.IsNullOrEmpty(channelSetting.FriendlyName)){
+                channel.FriendlyName = channelSetting.FriendlyName;
+            }
+
+            channel.Order = settings.Channels.IndexOf(channelSetting);
+
+            return channel;
+        }
+
+        private List<Channel> GetSelectedChannels(List<PlaylistItem> channels, Settings settings){
+            
+            var streams = new List<Channel>();
+
+            foreach(var item in channels){
+                var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == item.TvgName);
+                if(channelSetting != null){
+                    var channel = MapChannel(item, channelSetting, settings);                    
+                    streams.Add(channel);
+                }
+            }
+
+            return streams;
+        }
+
+
+        private List<Channel> GetSelectedGroups(List<PlaylistItem> channels, Settings settings){
+            var streams = new List<Channel>();
+
+            foreach(var item in channels){
+                var groupSettings = settings.Groups.FirstOrDefault(e => e.GroupId == item.GroupTitle);
                 
-                if(group != null){
-                    var groupItem = new Channel();
-                    groupItem.TvgName = tvgName;
-                    groupItem.GroupTitle = group.FriendlyName ?? groupTitle;
-                    groupItem.FriendlyName =  groupItem.FriendlyName;
-                    groupItem.TvgId =  GetValueForAttribute(item, "tvg-id");
-                    groupItem.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
-                    groupItem.Url =  file[i + 1];
-                    groupItem.Order = settings.Channels.Count() + settings.Groups.IndexOf(group);
+                if(groupSettings != null){
+                    var group = new Channel();
+                    group.TvgName = item.TvgName;
+                    group.TvgId = item.TvgId;
+                    group.TvgLogo = item.TvgLogo;
+                    group.Url = item.Url;
+                    
+                    if(!string.IsNullOrEmpty(groupSettings.FriendlyName)){
+                        group.GroupTitle = groupSettings.FriendlyName;
+                    }
 
-                    if(group.Exclude != null && group.Exclude.Any(e => e == tvgName)){
+                    if(!string.IsNullOrEmpty(groupSettings.FriendlyName)){
+                        group.FriendlyName =  groupSettings.FriendlyName;
+                    }
+
+                    group.Order = settings.Channels.Count() + settings.Groups.IndexOf(groupSettings);
+
+                    if(groupSettings.Exclude != null && groupSettings.Exclude.Any(e => e == item.TvgName)){
                         continue;
                     }
 
-                    streams.Add(groupItem);
+                    streams.Add(group);
                 }
             }
-*/
-            Console.Write($"\rCrunching channel data: {((decimal)i / (decimal)numberOfLines).ToString("0%")}");
+
+            return streams;
         }
 
-        return streams;
-    }
+        private string[] Load(string path){
+            Console.WriteLine("Loading channel list");
+            var result = this.fileHandler.GetSource(path);
 
-    private string GetValueForAttribute(string item, string attributeName){
-        var result = new Regex(attributeName + @"=\""([^""]*)\""", RegexOptions.Singleline).Match(item);
-        
-        if(result == null || result.Groups.Count < 1){
-            return string.Empty;
+            if(result == null){
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"- Couldn't download file {path}");
+                Console.ForegroundColor = ConsoleColor.White;
+                return new string[]{};
+            }
+            
+            using (var sr = new StreamReader(result))
+            {
+                string line;
+                var list = new List<string>();
+                
+                while ((line = sr.ReadLine()) != null)
+                {
+                    list.Add(line);
+                }
+
+                return list.ToArray();
+            }
         }
-        
-        return result.Groups[1].Value;
+
+        public void Save(string path, List<Channel> channels){
+            Console.WriteLine($"Writing M3U-file to {path}"); 
+
+            using (System.IO.StreamWriter writeFile =  new System.IO.StreamWriter(path, false, new UTF8Encoding(true))) {
+                writeFile.WriteLine("#EXTM3U");
+
+                foreach (Channel channel in channels.OrderBy(e => e.Order))
+                {
+                    var name = channel.FriendlyName ?? channel.TvgName;
+                    writeFile.WriteLine($"#EXTINF:-1 tvg-id=\"{channel.TvgId}\" tvg-name=\"{channel.TvgName}\" tvg-logo=\"{channel.TvgLogo}\" group-title=\"{channel.GroupTitle}\",{name}");
+                    writeFile.WriteLine(channel.Url);
+                }
+            }
+        }
+
+        private List<PlaylistItem> Parse(string[] file)
+        {
+            var streams = new List<PlaylistItem>();
+            var numberOfLines = file.Length;
+
+            for (var i = 1; i < numberOfLines; i = i + 2)
+            {
+                var item = file[i];
+
+                if(!item.StartsWith("#EXTINF:-1")){
+                    continue;
+                } 
+
+                var playlistItem = new PlaylistItem();
+                playlistItem.TvgName = GetValueForAttribute(item, "tvg-name");
+                playlistItem.GroupTitle = GetValueForAttribute(item, "group-title");
+                playlistItem.TvgId =  GetValueForAttribute(item, "tvg-id");
+                playlistItem.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
+                playlistItem.Url =  file[i + 1];
+                
+                streams.Add(playlistItem);
+                        
+                Console.Write($"\rCrunching playlist data: {((decimal)i / (decimal)numberOfLines).ToString("0%")}");
+            }
+
+            return streams;
+        }
+
+        private string GetValueForAttribute(string item, string attributeName){
+            var result = new Regex(attributeName + @"=\""([^""]*)\""", RegexOptions.Singleline).Match(item);
+            
+            if(result == null || result.Groups.Count < 1){
+                return string.Empty;
+            }
+            
+            return result.Groups[1].Value;
+        }
     }
 }

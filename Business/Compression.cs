@@ -2,43 +2,45 @@ using System;
 using System.IO;
 using System.IO.Compression;
 
-public class Compression : ICompression
-{
-    public void Compress(string path)
+namespace Couchpotato.Business{
+    public class Compression : ICompression
     {
-        FileInfo sourceFile = new FileInfo(path);
-        FileInfo targetFileName = new FileInfo($"{sourceFile.FullName}.gz");
-                    
-        using (FileStream sourceFileStream = sourceFile.OpenRead())
+        public void Compress(string path)
         {
-            using (FileStream targetFileStream = targetFileName.Create())
-                {
-                using (GZipStream gzipStream = new GZipStream(targetFileStream, CompressionMode.Compress))
-                {
-                    try
+            FileInfo sourceFile = new FileInfo(path);
+            FileInfo targetFileName = new FileInfo($"{sourceFile.FullName}.gz");
+                        
+            using (FileStream sourceFileStream = sourceFile.OpenRead())
+            {
+                using (FileStream targetFileStream = targetFileName.Create())
                     {
-                        sourceFileStream.CopyTo(gzipStream);
-                        Console.WriteLine($"Saving compressed file to {targetFileName}");
-                    }
-                    catch (Exception ex)
+                    using (GZipStream gzipStream = new GZipStream(targetFileStream, CompressionMode.Compress))
                     {
-                        Console.WriteLine($"Compression failed - {ex.Message}");
+                        try
+                        {
+                            sourceFileStream.CopyTo(gzipStream);
+                            Console.WriteLine($"Saving compressed file to {targetFileName}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Compression failed - {ex.Message}");
+                        }
                     }
                 }
             }
         }
-    }
 
-    public Stream Decompress(Stream originalFileStream){
-        try{
-            return new GZipStream(originalFileStream, CompressionMode.Decompress);
-        }catch(Exception ex){
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($" - Decompression failed - {ex.Message}");
-            Console.ForegroundColor = ConsoleColor.White;
-            
-            return null;
+        public Stream Decompress(Stream originalFileStream){
+            try{
+                return new GZipStream(originalFileStream, CompressionMode.Decompress);
+            }catch(Exception ex){
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($" - Decompression failed - {ex.Message}");
+                Console.ForegroundColor = ConsoleColor.White;
+                
+                return null;
+            }
         }
+        
     }
-    
 }

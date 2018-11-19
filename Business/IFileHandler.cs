@@ -1,7 +1,9 @@
 
 using System.IO;
 
-public interface IFileHandler
-{
-    Stream GetSource(string path);
+namespace Couchpotato.Business{
+    public interface IFileHandler
+    {
+        Stream GetSource(string path);
+    }
 }

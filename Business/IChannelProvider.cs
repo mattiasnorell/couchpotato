@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using Couchpotato.Models;
 
+namespace Couchpotato.Business{
 public interface IChannelProvider{
-    List<Channel> GetChannels(string path, Settings settings);
-    void Save(string path, List<Channel> channels);
+        ChannelResult GetChannels(string path, Settings settings);
+        void Save(string path, List<Channel> channels);
+    }
 }
