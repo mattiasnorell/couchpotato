@@ -1,11 +1,6 @@
 # Couchpotato
 Customize and aggrigate M3U and EPG files
 
-## How to run
-```
-couchpotato ./path-to-settings.json
-```
-
 ## Settings
 ```json
 {
@@ -66,3 +61,49 @@ couchpotato ./path-to-settings.json
 | groups | Import all items from a group. | Array | No |
 | channels | Import individual items. | Array | No |
 
+## How to compile/publish
+There is a lot more to this and others can explain it way better than me, but here are the basic commands. 
+Read more about publishing DotNet Core applications [here](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-publish) and [here](https://docs.microsoft.com/en-us/dotnet/core/deploying/deploy-with-cli).
+
+#### RaspberryPi
+```
+dotnet publish -c Release -r linux-arm
+```
+
+#### Windows
+```
+dotnet publish -c Release -r win10-x64
+```
+
+#### MacOS
+```
+dotnet publish -c Release -r osx.10.11-x64
+```
+
+#### Linux/Ubuntu
+```
+dotnet publish -c Release -r ubuntu.14.04-x64
+```
+
+## How to run
+#### Linux / Debian / MacOS
+* Copy all files from the "bin/Release/netcoreapp2.1/your platform/publish/". 
+* Make Couchpotato executable: chmod +x /path/to/couchpotato.
+* The settings file can be either a local or http path.
+
+#### Windows
+No need for any additional configuration besides compiling.
+```
+/path/to/couchpotato /path/to/settings.json
+```
+
+
+## Add as scheduled job
+
+#### Linux / Debian
+* Make sure Couchpotato can run before continuing.
+* Add the line below to Cron. The settings file can be either a local or http path. Local paths have to be absolute and not relative to the application.
+* Type "crontab -e" to edit the crontab for the current user.
+```
+0 4 * * * /path/to/couchpotato /path/to/settings.json
+```
