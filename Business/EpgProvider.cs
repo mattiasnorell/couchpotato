@@ -112,7 +112,7 @@ namespace Couchpotato.Business{
 
         private string AddTimeshift(string time, string timeshift){
             var originalTimeshift = time.Substring(time.Length - 5, 5);
-            
+
             if(!Regex.IsMatch(originalTimeshift, @"\+[0-9]+")){
                 return time;
             }
