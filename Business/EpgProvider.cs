@@ -88,8 +88,8 @@ namespace Couchpotato.Business{
                     epgProgram.Desc = program.Desc;
                     epgProgram.EpisodeNumber = program.EpisodeNumber;
                     epgProgram.Lang = program.Lang;
-                    epgProgram.Start = program.Start;
-                    epgProgram.Stop = program.Stop;
+                    epgProgram.Start = string.IsNullOrEmpty(settingsChannel.EpgTimeshift) ? program.Start : AddTimeshift(program.Start, settingsChannel.EpgTimeshift);
+                    epgProgram.Stop =  string.IsNullOrEmpty(settingsChannel.EpgTimeshift) ? program.Stop : AddTimeshift(program.Stop, settingsChannel.EpgTimeshift);
                     epgProgram.Title = program.Title;
 
                     epgFile.Programs.Add(epgProgram);
@@ -108,6 +108,16 @@ namespace Couchpotato.Business{
 
             writer.Serialize(file, epgList);  
             file.Close(); 
+        }
+
+        private string AddTimeshift(string time, string timeshift){
+            var originalTimeshift = time.Substring(time.Length - 5, 5);
+            
+            if(!Regex.IsMatch(originalTimeshift, @"\+[0-9]+")){
+                return time;
+            }
+            
+            return time.Substring(0, time.Length - 5) + timeshift;
         }
         
     }
