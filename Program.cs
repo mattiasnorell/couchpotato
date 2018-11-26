@@ -19,7 +19,7 @@ namespace Couchpotato{
             using (var scope = container.BeginLifetimeScope())
             {
                 var app = scope.Resolve<IApplication>();
-                app.Run(args[0]);
+                app.Run(args);
             }
         }
     }
