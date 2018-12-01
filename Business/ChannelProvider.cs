@@ -42,18 +42,17 @@ namespace Couchpotato.Business{
                 if(invalidStreams != null && invalidStreams.Count > 0){
                     Console.WriteLine("\nBroken streams found, trying to find fallback channels");
 
-                    if(settings.DefaultChannelFallbacks != null){
-                        foreach(var invalidStreamTvgName in invalidStreams){
-                            var fallbackChannel = GetFallbackChannel(invalidStreamTvgName, playlistItems, settings);
+                    foreach(var invalidStreamTvgName in invalidStreams){
+                        var fallbackChannel = GetFallbackChannel(invalidStreamTvgName, playlistItems, settings);
 
-                            if(fallbackChannel != null){
-                                Console.WriteLine($"- Fallback found for {invalidStreamTvgName}, now using {fallbackChannel.TvgName}");
-                                streams.Add(fallbackChannel);
-                            }else{
-                                Console.WriteLine($"- Sorry, no fallback found for {invalidStreamTvgName}");
-                            }
+                        if(fallbackChannel != null){
+                            Console.WriteLine($"- Fallback found for {invalidStreamTvgName}, now using {fallbackChannel.TvgName}");
+                            streams.Add(fallbackChannel);
+                        }else{
+                            Console.WriteLine($"- Sorry, no fallback found for {invalidStreamTvgName}");
                         }
                     }
+                    
                 }
             }
 
@@ -78,6 +77,10 @@ namespace Couchpotato.Business{
 
         private Channel GetDefaultFallback(string tvgName, List<PlaylistItem> playlistItems, Settings settings){
             
+            if(settings.DefaultChannelFallbacks != null){
+                return null;
+            }
+
             var fallbackChannelTvgNames = settings.DefaultChannelFallbacks.FirstOrDefault(e => tvgName.Contains(e.Key));
 
             if(fallbackChannelTvgNames == null || fallbackChannelTvgNames.Value == null){
@@ -148,11 +151,13 @@ namespace Couchpotato.Business{
             
             var streams = new List<Channel>();
 
-            foreach(var item in channels){
-                var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == item.TvgName);
+            foreach(var channel in settings.Channels){
+                var channelSetting = channels.FirstOrDefault(e => e.TvgName == channel.ChannelId);
                 if(channelSetting != null){
-                    var channel = MapChannel(item, channelSetting, settings);                    
-                    streams.Add(channel);
+                    var channelItem = MapChannel(channelSetting, channel, settings);                    
+                    streams.Add(channelItem);
+                }else{
+                    Console.Write($"\nCan't find channel { channel.ChannelId }");
                 }
             }
 

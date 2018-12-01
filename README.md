@@ -90,12 +90,12 @@ dotnet publish -c Release -r ubuntu.14.04-x64
 #### Linux / Debian / MacOS
 * Copy all files from the "bin/Release/netcoreapp2.1/your platform/publish/". 
 * Make Couchpotato executable: chmod +x /path/to/couchpotato.
-* The settings file can be either a local or http path.
+* The settings file can be either a local or http path. You can use multiple settings files.
 
 #### Windows
 No need for any additional configuration besides compiling.
 ```
-/path/to/couchpotato /path/to/settings.json
+/path/to/couchpotato /path/to/settings.json /path/to/additional/settings.json
 ```
 
 

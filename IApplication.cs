@@ -1,3 +1,3 @@
 public interface IApplication{
-    void Run(string settingsPath);
+    void Run(string[] settingsPaths);
 }

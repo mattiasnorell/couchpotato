@@ -18,15 +18,33 @@ namespace Couchpotato {
             this.compression = compression;
         }
 
-        public void Run(string settingsPath){
+        public void Run(string[] settingsPaths){
             var startTime = DateTime.Now;
+            
+            foreach(var path in settingsPaths){
+                if(string.IsNullOrEmpty(path) || !path.ToLower().EndsWith(".json")){
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Settings parameter \"{path}\" isn't valid.");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    
+                    continue;
+                }
 
+                Create(path);
+            }
+
+            var endTime = DateTime.Now;
+            var timeTaken = (endTime - startTime).TotalSeconds;
+
+            Console.WriteLine($"\nDone! It took {Math.Ceiling(timeTaken)} seconds.");
+        }
+
+        private void Create(string settingsPath){
             var settings = settingsProvider.Load(settingsPath);
 
             if(settings == null){
                 Console.WriteLine($"\nNeed settings. Please fix. Thanks.");
-                
-                Environment.Exit(0);
+                return;
             }
 
             var channelResult = channelProvider.GetChannels(settings.M3uPath, settings);
@@ -56,11 +74,6 @@ namespace Couchpotato {
                 compression.Compress(outputM3uPath);
                 compression.Compress(outputEpgPath);
             }
-
-            var endTime = DateTime.Now;
-            var timeTaken = (endTime - startTime).TotalSeconds;
-
-            Console.WriteLine($"Done! It took {timeTaken} seconds.");
-        }         
+        }
     }
 }
