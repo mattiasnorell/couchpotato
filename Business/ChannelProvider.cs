@@ -174,11 +174,7 @@ namespace Couchpotato.Business{
                     group.Url = item.Url;
                     
                     if(!string.IsNullOrEmpty(groupSettings.FriendlyName)){
-                        group.GroupTitle = groupSettings.FriendlyName;
-                    }
-
-                    if(!string.IsNullOrEmpty(groupSettings.FriendlyName)){
-                        group.FriendlyName =  groupSettings.FriendlyName;
+                        group.GroupTitle = groupSettings.GroupId;
                     }
 
                     group.Order = settings.Channels.Count() + settings.Groups.IndexOf(groupSettings);
