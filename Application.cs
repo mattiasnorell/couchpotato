@@ -22,7 +22,7 @@ namespace Couchpotato {
             var startTime = DateTime.Now;
             
             foreach(var path in settingsPaths){
-                if(string.IsNullOrEmpty(path) || !path.ToLower().EndsWith(".json")){
+                if(string.IsNullOrEmpty(path) || !path.ToLower().Contains(".json")){
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Settings parameter \"{path}\" isn't valid.");
                     Console.ForegroundColor = ConsoleColor.White;
