@@ -157,7 +157,9 @@ namespace Couchpotato.Business{
                     var channelItem = MapChannel(channelSetting, channel, settings);                    
                     streams.Add(channelItem);
                 }else{
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.Write($"\nCan't find channel { channel.ChannelId }");
+                    Console.ForegroundColor = ConsoleColor.White;
                 }
             }
 
