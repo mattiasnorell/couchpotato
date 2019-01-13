@@ -37,7 +37,8 @@ namespace Couchpotato.Business{
                 epgList.Programs.AddRange(epgFile.Programs);
             }    
 
-            return Filter(epgList,settings);
+            var filteredEpgList = Filter(epgList,settings);
+            return filteredEpgList;
         }
 
         private EpgList Parse(string path)
@@ -65,6 +66,8 @@ namespace Couchpotato.Business{
             var channelCount = settings.Channels.Count;
             var i = 0;
 
+            var missingChannels = new List<SettingsChannel>();
+
             foreach(var settingsChannel in settings.Channels){
                 i = i + 1;
                 var epgId = settingsChannel.EpgId ?? settingsChannel.ChannelId;
@@ -72,6 +75,7 @@ namespace Couchpotato.Business{
                 Console.Write("\rFiltering EPG-files: " + ((decimal)i / (decimal)channelCount).ToString("0%"));
 
                 if(channel == null){
+                    missingChannels.Add(settingsChannel);
                     continue;
                 }
 
@@ -97,6 +101,17 @@ namespace Couchpotato.Business{
             }
 
             Console.Write("\n");
+
+            if(missingChannels.Any()){
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Couldn't find EPG for:");
+                
+                foreach(var missingChannel in missingChannels){
+                    Console.WriteLine($"- { missingChannel.FriendlyName}");
+                }
+
+                Console.ForegroundColor = ConsoleColor.White;
+            }
 
             return epgFile;
         }
