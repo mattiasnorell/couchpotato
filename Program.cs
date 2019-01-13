@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Couchpotato.Business;
+using Couchpotato.Plugins;
 
 namespace Couchpotato{
     class Program {
@@ -13,6 +14,7 @@ namespace Couchpotato{
             builder.RegisterType<FileHandler>().As<IFileHandler>();
             builder.RegisterType<SettingsProvider>().As<ISettingsProvider>();
             builder.RegisterType<StreamValidator>().As<IStreamValidator>();
+            builder.RegisterType<PluginHandler>().As<IPluginHandler>();
             
             var container = builder.Build();
 

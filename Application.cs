@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Couchpotato.Business;
+using Couchpotato.Plugins;
 
 namespace Couchpotato {
     class Application: IApplication{
@@ -10,17 +11,32 @@ namespace Couchpotato {
         private readonly IChannelProvider channelProvider;
         private readonly IEpgProvider epgProvider;
         private readonly ICompression compression;
+        private readonly IPluginHandler pluginHandler;
 
-        public Application(ISettingsProvider settingsProvider, IChannelProvider channelProvider, IEpgProvider epgProvider, ICompression compression){
+        public Application(
+            ISettingsProvider settingsProvider, 
+            IChannelProvider channelProvider, 
+            IEpgProvider epgProvider, 
+            ICompression compression,
+            IPluginHandler pluginHandler
+        ){
             this.settingsProvider = settingsProvider;
             this.channelProvider = channelProvider;
             this.epgProvider = epgProvider;
             this.compression = compression;
+            this.pluginHandler = pluginHandler;
         }
 
         public void Run(string[] settingsPaths){
             var startTime = DateTime.Now;
             
+            this.pluginHandler.Register();
+
+            var plugins = this.pluginHandler.GetPlugins();
+            foreach(var plugin in plugins){
+                plugin.Run();
+            }
+
             foreach(var path in settingsPaths){
                 if(string.IsNullOrEmpty(path) || !path.ToLower().Contains(".json")){
                     Console.ForegroundColor = ConsoleColor.Red;
