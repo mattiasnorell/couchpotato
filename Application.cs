@@ -32,11 +32,8 @@ namespace Couchpotato {
             
             this.pluginHandler.Register();
 
-            var plugins = this.pluginHandler.GetPlugins();
-            foreach(var plugin in plugins){
-                plugin.Run();
-            }
-
+            this.pluginHandler.RunPlugins(PluginType.ApplicationStart);
+            
             foreach(var path in settingsPaths){
                 if(string.IsNullOrEmpty(path) || !path.ToLower().Contains(".json")){
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -52,6 +49,7 @@ namespace Couchpotato {
             var endTime = DateTime.Now;
             var timeTaken = (endTime - startTime).TotalSeconds;
 
+            this.pluginHandler.RunPlugins(PluginType.ApplicationFinished);
             Console.WriteLine($"\nDone! It took {Math.Ceiling(timeTaken)} seconds.");
         }
 
@@ -63,6 +61,7 @@ namespace Couchpotato {
                 return;
             }
 
+            this.pluginHandler.RunPlugins(PluginType.BeforeChannel);
             var channelResult = channelProvider.GetChannels(settings.M3uPath, settings);
 
             if(!channelResult.Channels.Any()){
@@ -70,6 +69,8 @@ namespace Couchpotato {
                 
                 Environment.Exit(0);
             }
+
+            this.pluginHandler.RunPlugins(PluginType.BeforeEpg);
 
             var epgFile = epgProvider.Load(settings.EpgPath, settings);
             var outputPath = settings.OutputPath ?? "./";

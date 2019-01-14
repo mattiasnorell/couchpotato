@@ -3,21 +3,28 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
-namespace Couchpotato.Plugins {
-    public interface IPluginHandler
-    {
-        void Register();
-        List<IPlugin> GetPlugins();
-    }
-
+namespace Couchpotato.Plugins
+{
     public class PluginHandler : IPluginHandler
     {
         private string pluginPath = $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}";
         private List<Assembly> assemblies = new List<Assembly>();
-        private List<IPlugin> registeredPlugins = new List<IPlugin>();
+        private Dictionary<PluginType, List<IPlugin>> registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
 
-        public List<IPlugin> GetPlugins() {
-            return this.registeredPlugins;
+        public void RunPlugins(PluginType pluginType) {
+            if(!this.registeredPlugins.ContainsKey(pluginType)){
+                return;
+            }
+
+            foreach(var plugin in this.registeredPlugins[pluginType]){
+
+                try{
+                    plugin.Run();
+                }catch (Exception)
+                {
+
+                }
+            }
         }
 
         public void Register()
@@ -56,7 +63,17 @@ namespace Couchpotato.Plugins {
 
             foreach(var type in pluginTypes){
                 var plugin = (IPlugin)Activator.CreateInstance(type);
-                registeredPlugins.Add(plugin);
+                var attribute = (CouchpotatoPluginAttribute)type.GetCustomAttribute(typeof(CouchpotatoPluginAttribute), false);
+
+                if(attribute == null){
+                    continue;
+                }
+
+                if(!this.registeredPlugins.ContainsKey(attribute.EventName)){
+                    this.registeredPlugins[attribute.EventName] = new List<IPlugin>();
+                }
+
+                registeredPlugins[attribute.EventName].Add(plugin);
             }
         }
     }
