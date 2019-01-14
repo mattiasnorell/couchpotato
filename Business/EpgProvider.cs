@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 using Couchpotato.Models;
 
-namespace Couchpotato.Business{
+namespace Couchpotato.Business
+{
     public class EpgProvider: IEpgProvider{
         private readonly IFileHandler fileHandler;
 

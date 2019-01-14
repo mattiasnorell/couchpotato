@@ -1,4 +1,5 @@
 using System;
+using CouchpotatoShared.Plugins;
 
 namespace Couchpotato.Plugins
 {

@@ -1,9 +1,9 @@
 using System;
 using System.IO;
 using System.Net;
-using System.Text.RegularExpressions;
 
-namespace Couchpotato.Business{
+namespace Couchpotato.Business
+{
     public class FileHandler:IFileHandler
     {
         private readonly ICompression compression;

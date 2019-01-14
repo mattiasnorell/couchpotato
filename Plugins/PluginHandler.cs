@@ -2,16 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using CouchpotatoShared.Plugins;
 
 namespace Couchpotato.Plugins
 {
     public class PluginHandler : IPluginHandler
     {
-        private string pluginPath = $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}";
+        private string pluginPath = @"c:\temp\plugs";//$"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}";
         private List<Assembly> assemblies = new List<Assembly>();
         private Dictionary<PluginType, List<IPlugin>> registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
 
-        public void RunPlugins(PluginType pluginType) {
+        public void Run(PluginType pluginType) {
             if(!this.registeredPlugins.ContainsKey(pluginType)){
                 return;
             }
@@ -33,14 +34,19 @@ namespace Couchpotato.Plugins
             var pluginTypes = new List<Type>();
             
             if(!Directory.Exists(pluginPath)){
-//                return;
+                return;
             }
 
             var plugins = Directory.GetFiles(pluginPath, "*.dll");
 
             foreach(var plugin in plugins){
-                var assamblyName = AssemblyName.GetAssemblyName(plugin);
-                var assembly = Assembly.Load(assamblyName);
+
+                if(!File.Exists(plugin)){
+                    Console.WriteLine($"Can't find plugin {plugin}");
+                    continue;
+                }
+
+                var assembly = Assembly.LoadFrom(plugin);
                 assemblies.Add(assembly);
             }
 

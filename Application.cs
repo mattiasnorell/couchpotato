@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Couchpotato.Business;
 using Couchpotato.Plugins;
+using CouchpotatoShared.Plugins;
 
 namespace Couchpotato {
     class Application: IApplication{
@@ -32,7 +33,7 @@ namespace Couchpotato {
             
             this.pluginHandler.Register();
 
-            this.pluginHandler.RunPlugins(PluginType.ApplicationStart);
+            this.pluginHandler.Run(PluginType.ApplicationStart);
             
             foreach(var path in settingsPaths){
                 if(string.IsNullOrEmpty(path) || !path.ToLower().Contains(".json")){
@@ -49,7 +50,7 @@ namespace Couchpotato {
             var endTime = DateTime.Now;
             var timeTaken = (endTime - startTime).TotalSeconds;
 
-            this.pluginHandler.RunPlugins(PluginType.ApplicationFinished);
+            this.pluginHandler.Run(PluginType.ApplicationFinished);
             Console.WriteLine($"\nDone! It took {Math.Ceiling(timeTaken)} seconds.");
         }
 
@@ -61,7 +62,7 @@ namespace Couchpotato {
                 return;
             }
 
-            this.pluginHandler.RunPlugins(PluginType.BeforeChannel);
+            this.pluginHandler.Run(PluginType.BeforeChannel);
             var channelResult = channelProvider.GetChannels(settings.M3uPath, settings);
 
             if(!channelResult.Channels.Any()){
@@ -70,14 +71,14 @@ namespace Couchpotato {
                 Environment.Exit(0);
             }
 
-            this.pluginHandler.RunPlugins(PluginType.BeforeEpg);
+            this.pluginHandler.Run(PluginType.BeforeEpg);
 
             var epgFile = epgProvider.Load(settings.EpgPath, settings);
             var outputPath = settings.OutputPath ?? "./";
         
             if(!Directory.Exists(outputPath)){
                 Console.WriteLine($"Couldn't find output folder, creating it at {outputPath}!");
-                Directory.CreateDirectory(outputPath); 
+                Directory.CreateDirectory(outputPath);
             }
 
             var outputM3uPath = Path.Combine(outputPath, "channels.m3u");

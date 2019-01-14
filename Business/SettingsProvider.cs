@@ -1,13 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
 using Couchpotato.Models;
 using Newtonsoft.Json;
 
-namespace Couchpotato.Business{
+namespace Couchpotato.Business
+{
     public class SettingsProvider :  ISettingsProvider
     {
         private readonly IFileHandler fileHandler;
