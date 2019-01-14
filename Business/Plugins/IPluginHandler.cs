@@ -1,6 +1,6 @@
 using CouchpotatoShared.Plugins;
 
-namespace Couchpotato.Plugins
+namespace Couchpotato.Business.Plugins
 {
     public interface IPluginHandler
     {

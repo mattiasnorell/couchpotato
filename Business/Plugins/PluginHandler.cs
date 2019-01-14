@@ -4,11 +4,11 @@ using System.IO;
 using System.Reflection;
 using CouchpotatoShared.Plugins;
 
-namespace Couchpotato.Plugins
+namespace Couchpotato.Business.Plugins
 {
     public class PluginHandler : IPluginHandler
     {
-        private string pluginPath = @"c:\temp\plugs";//$"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}";
+        private string pluginPath = @"C:\Users\Mattias\Documents\GitHub\couchpotato-plugin\bin\Release\netcoreapp2.1\win10-x64\publish"; //$"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}/plugins";
         private List<Assembly> assemblies = new List<Assembly>();
         private Dictionary<PluginType, List<IPlugin>> registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
 
@@ -21,9 +21,9 @@ namespace Couchpotato.Plugins
 
                 try{
                     plugin.Run();
-                }catch (Exception)
+                }catch (Exception e)
                 {
-
+                    Console.WriteLine(e);
                 }
             }
         }
@@ -33,6 +33,7 @@ namespace Couchpotato.Plugins
             var pluginType = typeof(IPlugin);
             var pluginTypes = new List<Type>();
             
+            Console.WriteLine(pluginPath);
             if(!Directory.Exists(pluginPath)){
                 return;
             }
@@ -80,6 +81,8 @@ namespace Couchpotato.Plugins
                 }
 
                 registeredPlugins[attribute.EventName].Add(plugin);
+
+                Console.WriteLine($"Loaded plugin {type}");
             }
         }
     }

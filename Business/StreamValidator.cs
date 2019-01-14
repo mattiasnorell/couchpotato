@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Couchpotato.Models;
+using CouchpotatoShared.Channel;
 
 namespace Couchpotato.Business{
     public class StreamValidator:IStreamValidator{

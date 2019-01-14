@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Couchpotato.Business;
-using Couchpotato.Plugins;
+using Couchpotato.Business.Plugins;
 using CouchpotatoShared.Plugins;
 
 namespace Couchpotato {
@@ -29,6 +29,15 @@ namespace Couchpotato {
         }
 
         public void Run(string[] settingsPaths){
+            
+            if(settingsPaths == null || settingsPaths.Length == 0){
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"No settings file(s) found. Please fix.");
+                Console.ForegroundColor = ConsoleColor.White;
+                
+                Environment.Exit(0);
+            }
+
             var startTime = DateTime.Now;
             
             this.pluginHandler.Register();
@@ -51,6 +60,7 @@ namespace Couchpotato {
             var timeTaken = (endTime - startTime).TotalSeconds;
 
             this.pluginHandler.Run(PluginType.ApplicationFinished);
+            
             Console.WriteLine($"\nDone! It took {Math.Ceiling(timeTaken)} seconds.");
         }
 

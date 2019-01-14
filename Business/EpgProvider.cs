@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 using Couchpotato.Models;
+using CouchpotatoShared.Epg;
 
 namespace Couchpotato.Business
 {

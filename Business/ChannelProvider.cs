@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Couchpotato.Models;
+using CouchpotatoShared.Channel;
+
 namespace Couchpotato.Business
 {
     public class ChannelProvider: IChannelProvider{

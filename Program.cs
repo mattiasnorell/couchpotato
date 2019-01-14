@@ -1,6 +1,6 @@
 ﻿using Autofac;
 using Couchpotato.Business;
-using Couchpotato.Plugins;
+using Couchpotato.Business.Plugins;
 
 namespace Couchpotato{
     class Program {
