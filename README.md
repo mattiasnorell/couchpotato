@@ -1,5 +1,5 @@
 # Couchpotato
-Customize and aggrigate M3U and EPG files
+Customize and aggregate M3U and EPG files
 
 ## Settings
 ```json
@@ -119,9 +119,9 @@ Create a class, either in the Couchpotato project or as a new project, and have 
 
 | Lifecycle event | Description | 
 | :------------- | :------------- |
-| ApplicationStart | Once the application is finished bootstrapping everything this is the first thing that will run. |
-| BeforeChannel | Will run befor all M3U-files are loaded and parsed. Good place to run custom channel stuff. |
-| BeforeEpg | Will run befor all EPG-files are loaded and parsed. Good place to run custom EPG stuff. |
+| ApplicationStart | Once the application is finished bootstrapping this is the first thing that will run. |
+| BeforeChannel | Will run before all M3U-files are loaded and parsed. Good place to run custom channel stuff. |
+| BeforeEpg | Will run before all EPG-files are loaded and parsed. Good place to run custom EPG stuff. |
 | ApplicationFinished | The last thing that will happen before the application exits. Good place to remove temp-files etc. |
 
 #### Boilerplate
