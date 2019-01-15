@@ -8,7 +8,7 @@ namespace Couchpotato.Business.Plugins
 {
     public class PluginHandler : IPluginHandler
     {
-        private string pluginPath = @"C:\Users\Mattias\Documents\GitHub\couchpotato-plugin\bin\Release\netcoreapp2.1\win10-x64\publish"; //$"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}/plugins";
+        private string pluginPath = $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}/plugins";
         private List<Assembly> assemblies = new List<Assembly>();
         private Dictionary<PluginType, List<IPlugin>> registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
 
