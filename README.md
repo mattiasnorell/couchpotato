@@ -125,11 +125,11 @@ Create a class, either in the Couchpotato project or as a new project, and have 
 | ApplicationFinished | The last thing that will happen before the application exits. Good place to remove temp-files etc. |
 
 #### Boilerplate
-´´´
+```
 [CouchpotatoPlugin(PluginType.ApplicationStart)]
 public class HelloWorldPlugin: IPlugin {
     public void Run(){
         Console.WriteLine("Hello World!");
     }
 }
-´´´
+```
