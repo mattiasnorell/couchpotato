@@ -108,3 +108,28 @@ No need for any additional configuration besides compiling.
 ```
 0 4 * * * /path/to/couchpotato /path/to/settings.json
 ```
+
+## Plugins
+> The plugin system in Couchpotato is at the moment **very** rudimentary. If you use external DLLs it will only load that file, not check for dependencies or assembly version missmatchs. This **might** change in future versions.
+
+Couchpotatos real job is to read and write m3u and epg-files. That's it. No more functionallity should or will be added to the core application. "But I need this and that!" you might think. Don't worry, I got you fam. Enter, plugins!
+
+Create a class, either in the Couchpotato project or as a new project, and have it implement the IPlugin-interface. Now Couchpotato will discover it. Then add the CouchpotatoPlugin-attribute and set when you want the plugin to run. Avaliable 
+
+
+| Lifecycle event | Description | 
+| :------------- | :------------- |
+| ApplicationStart | Once the application is finished bootstrapping everything this is the first thing that will run. |
+| BeforeChannel | Will run befor all M3U-files are loaded and parsed. Good place to run custom channel stuff. |
+| BeforeEpg | Will run befor all EPG-files are loaded and parsed. Good place to run custom EPG stuff. |
+| ApplicationFinished | The last thing that will happen before the application exits. Good place to remove temp-files etc. |
+
+#### Boilerplate
+´´´
+[CouchpotatoPlugin(PluginType.ApplicationStart)]
+public class HelloWorldPlugin: IPlugin {
+    public void Run(){
+        Console.WriteLine("Hello World!");
+    }
+}
+´´´
