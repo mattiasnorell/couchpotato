@@ -1,10 +1,18 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using Couchpotato.Business.Logging;
 
 namespace Couchpotato.Business{
     public class Compression : ICompression
     {
+        private readonly ILogging logging;
+
+        public Compression(
+            ILogging logging
+        ){
+            this.logging = logging;
+        }
         public void Compress(string path)
         {
             FileInfo sourceFile = new FileInfo(path);
@@ -19,11 +27,11 @@ namespace Couchpotato.Business{
                         try
                         {
                             sourceFileStream.CopyTo(gzipStream);
-                            Console.WriteLine($"Saving compressed file to {targetFileName}");
+                            this.logging.Print($"Saving compressed file to {targetFileName}");
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"Compression failed - {ex.Message}");
+                            this.logging.Error($"Compression failed", ex);
                         }
                     }
                 }
@@ -34,9 +42,7 @@ namespace Couchpotato.Business{
             try{
                 return new GZipStream(originalFileStream, CompressionMode.Decompress);
             }catch(Exception ex){
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($" - Decompression failed - {ex.Message}");
-                Console.ForegroundColor = ConsoleColor.White;
+                this.logging.Error($"- Decompression failed", ex);
                 
                 return null;
             }

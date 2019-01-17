@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Couchpotato.Models;
+using Couchpotato.Business.Logging;
 using CouchpotatoShared.Channel;
 
 namespace Couchpotato.Business
@@ -13,11 +14,13 @@ namespace Couchpotato.Business
         private readonly ISettingsProvider settingsProvider;
         private readonly IFileHandler fileHandler;
         private readonly IStreamValidator streamValidator;
+        private readonly ILogging logging;
 
-        public ChannelProvider(ISettingsProvider settingsProvider, IFileHandler fileHandler, IStreamValidator streamValidator) {
+        public ChannelProvider(ISettingsProvider settingsProvider, IFileHandler fileHandler, IStreamValidator streamValidator, ILogging logging) {
             this.settingsProvider = settingsProvider;
             this.fileHandler = fileHandler;
             this.streamValidator = streamValidator;
+            this.logging = logging;
         }
 
         public ChannelResult GetChannels(string path, Settings settings){
@@ -38,20 +41,20 @@ namespace Couchpotato.Business
             }
             
             if(settings.ValidateStreams){
-                Console.WriteLine("\nValidating streams. This might disconnect all active streams.");
+                this.logging.Print("\nValidating streams. This might disconnect all active streams.");
                 var invalidStreams = this.streamValidator.ValidateStreams(streams);
 
                 if(invalidStreams != null && invalidStreams.Count > 0){
-                    Console.WriteLine("\nBroken streams found, trying to find fallback channels");
+                    this.logging.Info("\nBroken streams found, trying to find fallback channels");
 
                     foreach(var invalidStreamTvgName in invalidStreams){
                         var fallbackChannel = GetFallbackChannel(invalidStreamTvgName, playlistItems, settings);
 
                         if(fallbackChannel != null){
-                            Console.WriteLine($"- Fallback found for {invalidStreamTvgName}, now using {fallbackChannel.TvgName}");
+                            this.logging.Info($"- Fallback found for {invalidStreamTvgName}, now using {fallbackChannel.TvgName}");
                             streams.Add(fallbackChannel);
                         }else{
-                            Console.WriteLine($"- Sorry, no fallback found for {invalidStreamTvgName}");
+                            this.logging.Warn($"- Sorry, no fallback found for {invalidStreamTvgName}");
                         }
                     }
                     
@@ -152,16 +155,23 @@ namespace Couchpotato.Business
         private List<Channel> GetSelectedChannels(List<PlaylistItem> channels, Settings settings){
             
             var streams = new List<Channel>();
+            var brokenStreams = new List<String>();
 
             foreach(var channel in settings.Channels){
                 var channelSetting = channels.FirstOrDefault(e => e.TvgName == channel.ChannelId);
                 if(channelSetting != null){
-                    var channelItem = MapChannel(channelSetting, channel, settings);                    
+                    var channelItem = MapChannel(channelSetting, channel, settings);     
                     streams.Add(channelItem);
                 }else{
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Write($"\nCan't find channel { channel.ChannelId }");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    brokenStreams.Add(channel.ChannelId);
+                }
+            }
+
+            if(brokenStreams.Any()){
+                this.logging.Warn($"\nCan't find some channels:");
+
+                foreach(var brokenStream in brokenStreams){
+                    this.logging.Warn($"- {brokenStream }");
                 }
             }
 
@@ -200,13 +210,11 @@ namespace Couchpotato.Business
         }
 
         private string[] Load(string path){
-            Console.WriteLine("Loading channel list");
+            this.logging.Print("Loading channel list");
             var result = this.fileHandler.GetSource(path);
 
             if(result == null){
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"- Couldn't download file {path}");
-                Console.ForegroundColor = ConsoleColor.White;
+                this.logging.Error($"- Couldn't download file {path}");
                 return new string[]{};
             }
             
@@ -225,7 +233,7 @@ namespace Couchpotato.Business
         }
 
         public void Save(string path, List<Channel> channels){
-            Console.WriteLine($"Writing M3U-file to {path}"); 
+            this.logging.Print($"Writing M3U-file to {path}"); 
 
             using (System.IO.StreamWriter writeFile =  new System.IO.StreamWriter(path, false, new UTF8Encoding(true))) {
                 writeFile.WriteLine("#EXTM3U");
@@ -261,7 +269,7 @@ namespace Couchpotato.Business
                 
                 streams.Add(playlistItem);
                         
-                Console.Write($"\rCrunching playlist data: {((decimal)i / (decimal)numberOfLines).ToString("0%")}");
+                this.logging.PrintSameLine($"Crunching playlist data: {((decimal)i / (decimal)numberOfLines).ToString("0%")}");
             }
 
             return streams;

@@ -1,15 +1,21 @@
 using System;
 using System.IO;
 using System.Net;
+using Couchpotato.Business.Logging;
 
 namespace Couchpotato.Business
 {
     public class FileHandler:IFileHandler
     {
         private readonly ICompression compression;
+        private readonly ILogging logging;
 
-        public FileHandler(ICompression compression){
+        public FileHandler(
+            ICompression compression, 
+            ILogging logging
+        ){
             this.compression = compression;
+            this.logging = logging;
         }
 
         private Stream DownloadFile(string path){
@@ -26,18 +32,18 @@ namespace Couchpotato.Business
 
         public Stream GetSource(string path){
             if(path.StartsWith("http")){
-                Console.WriteLine($"- Downloading file from {path}");
+                this.logging.Print($"- Downloading file from {path}");
                 var file = DownloadFile(path);
 
                 if(path.EndsWith(".gz")){
-                    Console.WriteLine($"- Decompressing file");
+                    this.logging.Print($"- Decompressing file");
                     return compression.Decompress(file);
                 }
 
                 return file;
                 
             }else{
-                Console.WriteLine($"- Reading local file from {path}");
+                this.logging.Print($"- Reading local file from {path}");
 
                 if(!File.Exists(path)){
                     return null;
@@ -54,7 +60,5 @@ namespace Couchpotato.Business
             
             }
         }
-
-        
     }
 }

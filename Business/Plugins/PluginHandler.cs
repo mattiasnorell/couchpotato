@@ -3,14 +3,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using CouchpotatoShared.Plugins;
+using Couchpotato.Business.Logging;
 
 namespace Couchpotato.Business.Plugins
 {
     public class PluginHandler : IPluginHandler
     {
-        private string pluginPath = $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}/plugins";
+        private string pluginPath = @"C:\Projects\couchpotato-plugins\bin\Release\netcoreapp2.1\win10-x64\publish"; //$"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}/plugins";
         private List<Assembly> assemblies = new List<Assembly>();
         private Dictionary<PluginType, List<IPlugin>> registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
+        private readonly ILogging logging;
+
+        public PluginHandler(
+            ILogging logging
+        ){
+            this.logging = logging;
+        }
 
         public void Run(PluginType pluginType) {
             if(!this.registeredPlugins.ContainsKey(pluginType)){
@@ -23,7 +31,7 @@ namespace Couchpotato.Business.Plugins
                     plugin.Run();
                 }catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    this.logging.Error($"Error running plugin {pluginType}", e);
                 }
             }
         }
@@ -33,7 +41,6 @@ namespace Couchpotato.Business.Plugins
             var pluginType = typeof(IPlugin);
             var pluginTypes = new List<Type>();
             
-            Console.WriteLine(pluginPath);
             if(!Directory.Exists(pluginPath)){
                 return;
             }
@@ -43,7 +50,7 @@ namespace Couchpotato.Business.Plugins
             foreach(var plugin in plugins){
 
                 if(!File.Exists(plugin)){
-                    Console.WriteLine($"Can't find plugin {plugin}");
+                    this.logging.Info($"PluginHandler :: Plugin {plugin} not found");
                     continue;
                 }
 
@@ -82,7 +89,7 @@ namespace Couchpotato.Business.Plugins
 
                 registeredPlugins[attribute.EventName].Add(plugin);
 
-                Console.WriteLine($"Loaded plugin {type}");
+                this.logging.Info($"PluginHandler :: Loaded {type}");
             }
         }
     }

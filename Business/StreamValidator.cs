@@ -2,12 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Couchpotato.Business.Logging;
 using Couchpotato.Models;
 using CouchpotatoShared.Channel;
 
 namespace Couchpotato.Business{
     public class StreamValidator:IStreamValidator{
-        
+        private readonly ILogging logging;
+
+        public StreamValidator(ILogging logging){
+            this.logging = logging;
+        }
+
         public bool ValidateStreamByUrl(string url){
             return CheckChannelAvailability(url);
         }
@@ -28,7 +34,7 @@ namespace Couchpotato.Business{
                 }
 
                 i++;
-                Console.Write($"\r- Progress: {((decimal)i / (decimal)streamCount).ToString("0%")}");
+                this.logging.PrintSameLine($"- Progress: {((decimal)i / (decimal)streamCount).ToString("0%")}");
             }
 
             return invalidStreams;
@@ -45,7 +51,8 @@ namespace Couchpotato.Business{
                     request.Abort();
                     return true;
                 }
-            }catch(Exception){
+            }catch(Exception ex){
+                this.logging.Error("Channel validation failed", ex);
                 return false;
             }
         }

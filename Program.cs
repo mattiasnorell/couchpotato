@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Couchpotato.Business;
+using Couchpotato.Business.Logging;
 using Couchpotato.Business.Plugins;
 
 namespace Couchpotato{
@@ -15,6 +16,7 @@ namespace Couchpotato{
             builder.RegisterType<SettingsProvider>().As<ISettingsProvider>();
             builder.RegisterType<StreamValidator>().As<IStreamValidator>();
             builder.RegisterType<PluginHandler>().As<IPluginHandler>();
+            builder.RegisterType<Logging>().As<ILogging>();
             
             var container = builder.Build();
 

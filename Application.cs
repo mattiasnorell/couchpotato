@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Couchpotato.Business;
+using Couchpotato.Business.Logging;
 using Couchpotato.Business.Plugins;
 using CouchpotatoShared.Plugins;
 
@@ -13,27 +14,28 @@ namespace Couchpotato {
         private readonly IEpgProvider epgProvider;
         private readonly ICompression compression;
         private readonly IPluginHandler pluginHandler;
+        private readonly ILogging logging;
 
         public Application(
             ISettingsProvider settingsProvider, 
             IChannelProvider channelProvider, 
             IEpgProvider epgProvider, 
             ICompression compression,
-            IPluginHandler pluginHandler
+            IPluginHandler pluginHandler,
+            ILogging logging
         ){
             this.settingsProvider = settingsProvider;
             this.channelProvider = channelProvider;
             this.epgProvider = epgProvider;
             this.compression = compression;
             this.pluginHandler = pluginHandler;
+            this.logging = logging;
         }
 
         public void Run(string[] settingsPaths){
             
             if(settingsPaths == null || settingsPaths.Length == 0){
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"No settings file(s) found. Please fix.");
-                Console.ForegroundColor = ConsoleColor.White;
+                this.logging.Error($"No settings file(s) found. Please fix.");
                 
                 Environment.Exit(0);
             }
@@ -46,9 +48,7 @@ namespace Couchpotato {
             
             foreach(var path in settingsPaths){
                 if(string.IsNullOrEmpty(path) || !path.ToLower().Contains(".json")){
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Settings parameter \"{path}\" isn't valid.");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    this.logging.Error($"Settings parameter \"{path}\" isn't valid.");
                     
                     continue;
                 }
@@ -61,14 +61,14 @@ namespace Couchpotato {
 
             this.pluginHandler.Run(PluginType.ApplicationFinished);
             
-            Console.WriteLine($"\nDone! It took {Math.Ceiling(timeTaken)} seconds.");
+            this.logging.Print($"\nDone! It took {Math.Ceiling(timeTaken)} seconds.");
         }
 
         private void Create(string settingsPath){
             var settings = settingsProvider.Load(settingsPath);
 
             if(settings == null){
-                Console.WriteLine($"\nNeed settings. Please fix. Thanks.");
+                this.logging.Info($"\nNeed settings. Please fix. Thanks.");
                 return;
             }
 
@@ -76,7 +76,7 @@ namespace Couchpotato {
             var channelResult = channelProvider.GetChannels(settings.M3uPath, settings);
 
             if(!channelResult.Channels.Any()){
-                Console.WriteLine($"\nNo channels found so no reason to continue. Bye bye.");
+               this.logging.Info($"\nNo channels found so no reason to continue. Bye bye.");
                 
                 Environment.Exit(0);
             }
@@ -87,7 +87,7 @@ namespace Couchpotato {
             var outputPath = settings.OutputPath ?? "./";
         
             if(!Directory.Exists(outputPath)){
-                Console.WriteLine($"Couldn't find output folder, creating it at {outputPath}!");
+                this.logging.Info($"Couldn't find output folder, creating it at {outputPath}!");
                 Directory.CreateDirectory(outputPath);
             }
 

@@ -4,19 +4,25 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 using Couchpotato.Models;
+using Couchpotato.Business.Logging;
 using CouchpotatoShared.Epg;
 
 namespace Couchpotato.Business
 {
     public class EpgProvider: IEpgProvider{
         private readonly IFileHandler fileHandler;
+        private readonly ILogging logging;
 
-        public EpgProvider(IFileHandler fileHandler){
+        public EpgProvider(
+            IFileHandler fileHandler,
+            ILogging logging
+        ){
             this.fileHandler = fileHandler;
+            this.logging = logging;
         }
 
         public EpgList Load(string[] paths, Settings settings){
-            Console.WriteLine($"\nLoading EPG-files:");
+            this.logging.Print($"\nLoading EPG-files:");
 
             var epgList = new EpgList();
             epgList.GeneratorInfoName = "";
@@ -28,9 +34,7 @@ namespace Couchpotato.Business
                 var epgFile = Parse(path);
 
                 if(epgFile == null){
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"- Couldn't download file {path}");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    this.logging.Error($"- Couldn't download file {path}");
                     continue;
                 }
 
@@ -73,7 +77,8 @@ namespace Couchpotato.Business
                 i = i + 1;
                 var epgId = settingsChannel.EpgId ?? settingsChannel.ChannelId;
                 var channel = input.Channels.FirstOrDefault(e => e.Id == epgId);
-                Console.Write("\rFiltering EPG-files: " + ((decimal)i / (decimal)channelCount).ToString("0%"));
+
+                this.logging.PrintSameLine("\rFiltering EPG-files: " + ((decimal)i / (decimal)channelCount).ToString("0%"));
 
                 if(channel == null){
                     missingChannels.Add(settingsChannel);
@@ -101,14 +106,14 @@ namespace Couchpotato.Business
                 }
             }
 
-            Console.Write("\n");
+            this.logging.Print("\n"); //TODO: Remove this and make better
 
             if(missingChannels.Any()){
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"Couldn't find EPG for:");
+                this.logging.Warn($"Couldn't find EPG for:");
                 
                 foreach(var missingChannel in missingChannels){
-                    Console.WriteLine($"- { missingChannel.FriendlyName}");
+                    this.logging.Warn($"- { missingChannel.FriendlyName}");
                 }
 
                 Console.ForegroundColor = ConsoleColor.White;
@@ -118,9 +123,9 @@ namespace Couchpotato.Business
         }
 
         public void Save(string path, EpgList epgList){
-            Console.WriteLine($"Writing EPG-file to {path}"); 
-            System.Xml.Serialization.XmlSerializer writer =  new System.Xml.Serialization.XmlSerializer(typeof(EpgList));  
-            System.IO.FileStream file = System.IO.File.Create(path);  
+            this.logging.Print($"Writing EPG-file to {path}"); 
+            var writer =  new XmlSerializer(typeof(EpgList));  
+            var file = System.IO.File.Create(path);  
 
             writer.Serialize(file, epgList);  
             file.Close(); 
