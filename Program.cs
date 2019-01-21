@@ -1,16 +1,13 @@
 ﻿using System.IO;
 using Autofac;
-using Autofac.Builder;
-using Autofac.Configuration;
-using Autofac.Core;
 using Couchpotato.Business;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Plugins;
 using Microsoft.Extensions.Configuration;
 
-namespace Couchpotato{
+namespace Couchpotato
+{
     class Program {
-        private static IConfiguration Configuration { get; set; }
         static void Main(string[] args) {
 
             var config = new ConfigurationBuilder()
