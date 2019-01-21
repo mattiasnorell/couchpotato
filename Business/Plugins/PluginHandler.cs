@@ -4,6 +4,8 @@ using System.IO;
 using System.Reflection;
 using CouchpotatoShared.Plugins;
 using Couchpotato.Business.Logging;
+using Microsoft.Extensions.Configuration;
+using System.Dynamic;
 
 namespace Couchpotato.Business.Plugins
 {
@@ -13,11 +15,14 @@ namespace Couchpotato.Business.Plugins
         private List<Assembly> assemblies = new List<Assembly>();
         private Dictionary<PluginType, List<IPlugin>> registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
         private readonly ILogging logging;
+        private readonly IConfiguration configuration;
 
         public PluginHandler(
-            ILogging logging
+            ILogging logging,
+            IConfiguration configuration
         ){
             this.logging = logging;
+            this.configuration = configuration;
         }
 
         public void Run(PluginType pluginType) {
@@ -25,9 +30,10 @@ namespace Couchpotato.Business.Plugins
                 return;
             }
 
+            this.logging.Info($"\nRunning {pluginType} plugins:");
             foreach(var plugin in this.registeredPlugins[pluginType]){
-
                 try{
+                    this.logging.Info($"- {plugin.GetType().Name}");
                     plugin.Run();
                 }catch (Exception e)
                 {
@@ -76,12 +82,14 @@ namespace Couchpotato.Business.Plugins
             }
 
             foreach(var type in pluginTypes){
-                var plugin = (IPlugin)Activator.CreateInstance(type);
+                var settings = GetSettings(type.Name);
+                var plugin = (IPlugin)Activator.CreateInstance(type, settings);
                 var attribute = (CouchpotatoPluginAttribute)type.GetCustomAttribute(typeof(CouchpotatoPluginAttribute), false);
 
                 if(attribute == null){
                     continue;
                 }
+
 
                 if(!this.registeredPlugins.ContainsKey(attribute.EventName)){
                     this.registeredPlugins[attribute.EventName] = new List<IPlugin>();
@@ -91,6 +99,20 @@ namespace Couchpotato.Business.Plugins
 
                 this.logging.Info($"PluginHandler :: Loaded {type}");
             }
+        }
+        
+
+        private Dictionary<string, object> GetSettings(string key){
+            var pluginSettingsValues = this.configuration.GetSection($"plugins:{key}")?.GetChildren();
+            var pluginSettings = new Dictionary<string, object>();
+
+            if(pluginSettings != null){
+                foreach(var setting in pluginSettingsValues){
+                    pluginSettings.Add(setting.Key, setting.Value);
+                }
+            }
+            
+            return pluginSettings;
         }
     }
 }

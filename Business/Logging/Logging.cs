@@ -20,6 +20,10 @@ namespace Couchpotato.Business.Logging {
         public void Error(string message, Exception exception = null){
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(message);
+            
+            if(exception != null){
+                Console.WriteLine($"Exception: \n{exception}");
+            }
         }
 
         public void Info(string message)

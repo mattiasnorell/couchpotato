@@ -58,7 +58,12 @@ namespace Couchpotato.Business
                     return null;
                 }
 
-                return (EpgList)serializer.Deserialize(stream);          
+                try{
+                    return (EpgList)serializer.Deserialize(stream);          
+                }catch(Exception ex){
+                    this.logging.Error("Couldn't deserialize the EPG-list", ex);
+                    return null;
+                }
             };
         }
 
