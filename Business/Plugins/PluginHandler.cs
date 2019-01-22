@@ -22,6 +22,11 @@ namespace Couchpotato.Business.Plugins
         ){
             this.logging = logging;
             this.configuration = configuration;
+
+            var pluginPathSettings = this.configuration.GetSection($"pluginPath")?.Value;
+            if(!string.IsNullOrEmpty(pluginPathSettings)){
+                this.pluginPath = pluginPathSettings;
+            }
         }
 
         public void Run(PluginType pluginType) {

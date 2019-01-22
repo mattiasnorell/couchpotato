@@ -1,7 +1,18 @@
 # Couchpotato
 Customize and aggregate M3U and EPG files
 
-## Settings
+## Application settings (appsettings.json)
+```json
+{
+    "pluginPath" : "C:\\Projects\\couchpotato-plugins\\bin\\Debug\\netcoreapp2.1",
+    "plugins": {
+        "PluginName": {
+            "Setting": "lorem ipsum dolor sit amet"
+        }
+    }
+}
+
+## Project settings
 ```json
 {
     "outputPath": "Relative or absolute path to output folder",

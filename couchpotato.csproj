@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Autofac.Configuration" Version="4.0.0" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.3.0" />
-    <PackageReference Include="Couchpotato.Shared" Version="0.0.9" />
+    <PackageReference Include="Couchpotato.Shared" Version="0.0.11" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
