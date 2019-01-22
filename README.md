@@ -4,13 +4,14 @@ Customize and aggregate M3U and EPG files
 ## Application settings (appsettings.json)
 ```json
 {
-    "pluginPath" : "C:\\Projects\\couchpotato-plugins\\bin\\Debug\\netcoreapp2.1",
+    "pluginPath" : "PATH_TO_PLUGIN_FOLDER",
     "plugins": {
         "PluginName": {
             "Setting": "lorem ipsum dolor sit amet"
         }
     }
 }
+```
 
 ## Project settings
 ```json
@@ -59,7 +60,7 @@ Customize and aggregate M3U and EPG files
     }
     ]
 }
-````
+```
 
 | Property | Description | Type | Required |
 | :------------- | :------------- |:------------- |:------------- |
