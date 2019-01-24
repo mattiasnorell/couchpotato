@@ -101,7 +101,7 @@ namespace Couchpotato.Business.Plugins
 
                 registeredPlugins[attribute.EventName].Add(plugin);
 
-                this.logging.Info($"PluginHandler :: Loaded {type}");
+                this.logging.Info($"PluginHandler :: Loaded {type.Name}");
             }
         }
         
