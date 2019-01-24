@@ -11,7 +11,6 @@ namespace Couchpotato.Business.Plugins
     public class PluginHandler : IPluginHandler
     {
         private string pluginPath = $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}/plugins";
-        private List<Assembly> assemblies = new List<Assembly>();
         private Dictionary<PluginType, List<IPlugin>> registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
         private readonly ILogging logging;
         private readonly IConfiguration configuration;
@@ -34,7 +33,7 @@ namespace Couchpotato.Business.Plugins
                 return;
             }
 
-            this.logging.Info($"\nRunning {pluginType} plugins:");
+            this.logging.Info($"\nRunning {pluginType}-plugins:");
             foreach(var plugin in this.registeredPlugins[pluginType]){
                 try{
                     this.logging.Info($"- {plugin.GetType().Name}");
@@ -48,22 +47,19 @@ namespace Couchpotato.Business.Plugins
 
         public void Register()
         {
+            var assemblies = new List<Assembly>();
             var pluginType = typeof(IPlugin);
             var pluginTypes = new List<Type>();
             
             if(!Directory.Exists(pluginPath)){
+                this.logging.Warn("Plugin folder not found");
+                
                 return;
             }
 
             var plugins = Directory.GetFiles(pluginPath, "*.dll");
 
             foreach(var plugin in plugins){
-
-                if(!File.Exists(plugin)){
-                    this.logging.Info($"PluginHandler :: Plugin {plugin} not found");
-                    continue;
-                }
-
                 var assembly = Assembly.LoadFrom(plugin);
                 assemblies.Add(assembly);
             }
@@ -110,7 +106,7 @@ namespace Couchpotato.Business.Plugins
             var pluginSettingsValues = this.configuration.GetSection($"plugins:{key}")?.GetChildren();
             var pluginSettings = new Dictionary<string, object>();
 
-            if(pluginSettings != null){
+            if(pluginSettingsValues != null){
                 foreach(var setting in pluginSettingsValues){
                     pluginSettings.Add(setting.Key, setting.Value);
                 }
