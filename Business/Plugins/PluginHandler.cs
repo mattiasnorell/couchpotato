@@ -41,7 +41,7 @@ namespace Couchpotato.Business.Plugins
                     plugin.Run();
                 }catch (Exception e)
                 {
-                    this.logging.Error($"Error running plugin {pluginType}", e);
+                    this.logging.Error($"Error running plugin {plugin.GetType().Name}", e);
                 }
             }
         }
