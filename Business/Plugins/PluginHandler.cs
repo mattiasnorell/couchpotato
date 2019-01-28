@@ -5,6 +5,7 @@ using System.Reflection;
 using CouchpotatoShared.Plugins;
 using Couchpotato.Business.Logging;
 using Microsoft.Extensions.Configuration;
+using CouchpotatoShared.Channel;
 
 namespace Couchpotato.Business.Plugins
 {
@@ -28,7 +29,7 @@ namespace Couchpotato.Business.Plugins
             }
         }
 
-        public void Run(PluginType pluginType) {
+        public void Run(PluginType pluginType, ChannelResult channelResult = null) {
             if(!this.registeredPlugins.ContainsKey(pluginType)){
                 return;
             }
@@ -37,7 +38,7 @@ namespace Couchpotato.Business.Plugins
             foreach(var plugin in this.registeredPlugins[pluginType]){
                 try{
                     this.logging.Info($"- {plugin.GetType().Name}");
-                    plugin.Run();
+                    plugin.Run(channelResult);
                 }catch (Exception e)
                 {
                     this.logging.Error($"Error running plugin {plugin.GetType().Name}", e);

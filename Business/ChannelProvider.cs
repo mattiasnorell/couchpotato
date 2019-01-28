@@ -191,11 +191,7 @@ namespace Couchpotato.Business
                     group.TvgId = item.TvgId;
                     group.TvgLogo = item.TvgLogo;
                     group.Url = item.Url;
-                    
-                    if(!string.IsNullOrEmpty(groupSettings.FriendlyName)){
-                        group.GroupTitle = groupSettings.GroupId;
-                    }
-
+                    group.GroupTitle = groupSettings.FriendlyName ?? groupSettings.GroupId;
                     group.Order = settings.Channels.Count() + settings.Groups.IndexOf(groupSettings);
 
                     if(groupSettings.Exclude != null && groupSettings.Exclude.Any(e => e == item.TvgName)){

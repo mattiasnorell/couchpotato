@@ -74,6 +74,7 @@ namespace Couchpotato {
 
             this.pluginHandler.Run(PluginType.BeforeChannel);
             var channelResult = channelProvider.GetChannels(settings.M3uPath, settings);
+            this.pluginHandler.Run(PluginType.AfterChannel, channelResult);
 
             if(!channelResult.Channels.Any()){
                this.logging.Info($"\nNo channels found so no reason to continue. Bye bye.");
@@ -81,7 +82,7 @@ namespace Couchpotato {
                 Environment.Exit(0);
             }
 
-            this.pluginHandler.Run(PluginType.BeforeEpg);
+            this.pluginHandler.Run(PluginType.BeforeEpg, channelResult);
 
             var epgFile = epgProvider.Load(settings.EpgPath, settings);
             var outputPath = settings.OutputPath ?? "./";
