@@ -83,8 +83,9 @@ namespace Couchpotato {
             }
 
             this.pluginHandler.Run(PluginType.BeforeEpg, channelResult);
-
             var epgFile = epgProvider.Load(settings.EpgPath, settings);
+            this.pluginHandler.Run(PluginType.AfterEpg, channelResult);
+
             var outputPath = settings.OutputPath ?? "./";
         
             if(!Directory.Exists(outputPath)){
