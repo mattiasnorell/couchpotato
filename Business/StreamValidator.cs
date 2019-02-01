@@ -51,8 +51,7 @@ namespace Couchpotato.Business{
                     request.Abort();
                     return true;
                 }
-            }catch(Exception ex){
-                this.logging.Error("Channel validation failed", ex);
+            }catch(Exception){
                 return false;
             }
         }
