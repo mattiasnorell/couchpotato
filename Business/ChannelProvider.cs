@@ -133,7 +133,7 @@ namespace Couchpotato.Business
         private Channel MapChannel(PlaylistItem playlistItem, SettingsChannel channelSetting, Settings settings){
             var channel = new Channel();
             channel.TvgName = playlistItem.TvgName;
-            channel.TvgId = playlistItem.TvgId;
+            channel.TvgId = channelSetting.EpgId ?? playlistItem.TvgId;
             channel.TvgLogo = playlistItem.TvgLogo;
             channel.Url = playlistItem.Url;
 
