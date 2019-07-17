@@ -6,6 +6,7 @@ using CouchpotatoShared.Plugins;
 using Couchpotato.Business.Logging;
 using Microsoft.Extensions.Configuration;
 using CouchpotatoShared.Channel;
+using CouchpotatoShared.Epg;
 
 namespace Couchpotato.Business.Plugins
 {
@@ -29,16 +30,17 @@ namespace Couchpotato.Business.Plugins
             }
         }
 
-        public void Run(PluginType pluginType, ChannelResult channelResult = null) {
+        public void Run(PluginType pluginType, ChannelResult streams = null, EpgList programGuide = null) {
             if(!this.registeredPlugins.ContainsKey(pluginType)){
                 return;
             }
 
             this.logging.Info($"\nRunning {pluginType}-plugins:");
+            
             foreach(var plugin in this.registeredPlugins[pluginType]){
                 try{
                     this.logging.Info($"- {plugin.GetType().Name}");
-                    plugin.Run(channelResult);
+                    plugin.Run(streams, programGuide);
                 }catch (Exception e)
                 {
                     this.logging.Error($"Error running plugin {plugin.GetType().Name}", e);

@@ -3,7 +3,7 @@ using CouchpotatoShared.Epg;
 
 namespace Couchpotato.Business{
     public interface IEpgProvider{
-        EpgList Load(string[] paths, Settings settings);
+        EpgList GetProgramGuide(string[] paths, Settings settings);
         void Save(string path, EpgList epgList);
     }
 }

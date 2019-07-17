@@ -21,7 +21,23 @@ namespace Couchpotato.Business
             this.logging = logging;
         }
 
-        public EpgList Load(string[] paths, Settings settings){
+        public EpgList GetProgramGuide(string[] paths, Settings settings){
+            var loadedEpgLists = this.Load(paths);
+            var filteredEpgList = this.Filter(loadedEpgLists, settings);
+
+            return filteredEpgList;
+        }
+
+        public void Save(string path, EpgList epgList){
+            this.logging.Print($"Writing EPG-file to {path}"); 
+            var writer =  new XmlSerializer(typeof(EpgList));  
+            var file = System.IO.File.Create(path);  
+
+            writer.Serialize(file, epgList);  
+            file.Close(); 
+        }
+        
+        private EpgList Load(string[] paths){
             this.logging.Print($"\nLoading EPG-files:");
 
             var epgList = new EpgList();
@@ -42,8 +58,7 @@ namespace Couchpotato.Business
                 epgList.Programs.AddRange(epgFile.Programs);
             }    
 
-            var filteredEpgList = Filter(epgList,settings);
-            return filteredEpgList;
+            return epgList;
         }
 
         private EpgList Parse(string path)
@@ -125,15 +140,6 @@ namespace Couchpotato.Business
             }
 
             return epgFile;
-        }
-
-        public void Save(string path, EpgList epgList){
-            this.logging.Print($"Writing EPG-file to {path}"); 
-            var writer =  new XmlSerializer(typeof(EpgList));  
-            var file = System.IO.File.Create(path);  
-
-            writer.Serialize(file, epgList);  
-            file.Close(); 
         }
 
         private string AddTimeshift(string time, string timeshift){
