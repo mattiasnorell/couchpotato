@@ -85,14 +85,21 @@ namespace Couchpotato.Business.Plugins
             }
 
             foreach(var type in pluginTypes){
-                var settings = GetSettings(type.Name);
-                var plugin = (IPlugin)Activator.CreateInstance(type, settings);
                 var attribute = (CouchpotatoPluginAttribute)type.GetCustomAttribute(typeof(CouchpotatoPluginAttribute), false);
 
                 if(attribute == null){
                     continue;
                 }
 
+                var settings = GetSettings(type.Name);
+                
+                var requireSettingsAttribute = (RequireSettingsAttribute)type.GetCustomAttribute(typeof(RequireSettingsAttribute), false);
+                if(settings.Count == 0 && requireSettingsAttribute != null){
+                    this.logging.Info($"PluginHandler :: Can't load {type.Name}, settings not found");
+                    continue;
+                }
+
+                var plugin = (IPlugin)Activator.CreateInstance(type, settings);
 
                 if(!this.registeredPlugins.ContainsKey(attribute.EventName)){
                     this.registeredPlugins[attribute.EventName] = new List<IPlugin>();
