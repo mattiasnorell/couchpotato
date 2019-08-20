@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
-using Couchpotato.Models;
 using Couchpotato.Business.Logging;
 using CouchpotatoShared.Epg;
+using Couchpotato.Business.Settings.Models;
 
 namespace Couchpotato.Business
 {
@@ -21,7 +21,7 @@ namespace Couchpotato.Business
             this.logging = logging;
         }
 
-        public EpgList GetProgramGuide(string[] paths, Settings settings){
+        public EpgList GetProgramGuide(string[] paths, UserSettings settings){
             var loadedEpgLists = this.Load(paths);
             var filteredEpgList = this.Filter(loadedEpgLists, settings);
 
@@ -82,7 +82,7 @@ namespace Couchpotato.Business
             };
         }
 
-        private EpgList Filter(EpgList input, Settings settings){
+        private EpgList Filter(EpgList input, UserSettings settings){
             var epgFile = new EpgList();
             epgFile.GeneratorInfoName = "Couchpotato";
             epgFile.Channels = new List<EpgChannel>();
@@ -91,7 +91,7 @@ namespace Couchpotato.Business
             var channelCount = settings.Channels.Count;
             var i = 0;
 
-            var missingChannels = new List<SettingsChannel>();
+            var missingChannels = new List<UserSettingsChannel>();
 
             foreach(var settingsChannel in settings.Channels){
                 i = i + 1;

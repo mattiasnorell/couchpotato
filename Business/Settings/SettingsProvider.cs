@@ -1,8 +1,7 @@
-using System;
 using System.IO;
 using Couchpotato.Business.Logging;
-using Couchpotato.Models;
 using Newtonsoft.Json;
+using Couchpotato.Business.Settings.Models;
 
 namespace Couchpotato.Business
 {
@@ -19,7 +18,7 @@ namespace Couchpotato.Business
             this.logging = logging;
         }
 
-        public Settings Load(string path)
+        public UserSettings Load(string path)
         {
             this.logging.Print("Loading settings from " + path);
             
@@ -33,7 +32,7 @@ namespace Couchpotato.Business
             using (StreamReader responseReader = new StreamReader(file))
             {
                 var response = responseReader.ReadToEnd();
-                return JsonConvert.DeserializeObject<Settings>(response);
+                return JsonConvert.DeserializeObject<UserSettings>(response);
             }
         }
     }

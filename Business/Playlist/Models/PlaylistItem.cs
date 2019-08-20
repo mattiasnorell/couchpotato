@@ -1,4 +1,4 @@
-namespace Couchpotato.Models
+namespace Couchpotato.Business.Playlist.Models
 {
     public class PlaylistItem{
         public string TvgId{get;set;}

@@ -1,6 +1,6 @@
-namespace Couchpotato.Models
+namespace Couchpotato.Business.Settings.Models
 {
-    public class SettingsChannel{
+    public class UserSettingsChannel{
         public string ChannelId{get;set;}
         public string CustomGroupName{get;set;}
         public string FriendlyName{get;set;}

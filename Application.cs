@@ -3,6 +3,8 @@ using System;
 using System.IO;
 using System.Linq;
 using Couchpotato.Business;
+using Couchpotato.Business.Playlist;
+using Couchpotato.Business.Compression;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Plugins;
 using CouchpotatoShared.Plugins;
@@ -10,7 +12,7 @@ using CouchpotatoShared.Plugins;
 namespace Couchpotato {
     class Application: IApplication{
         private readonly ISettingsProvider settingsProvider;
-        private readonly IChannelProvider channelProvider;
+        private readonly IPlaylistProvider playlistProvider;
         private readonly IEpgProvider epgProvider;
         private readonly ICompression compression;
         private readonly IPluginHandler pluginHandler;
@@ -18,14 +20,14 @@ namespace Couchpotato {
 
         public Application(
             ISettingsProvider settingsProvider, 
-            IChannelProvider channelProvider, 
+            IPlaylistProvider playlistProvider, 
             IEpgProvider epgProvider, 
             ICompression compression,
             IPluginHandler pluginHandler,
             ILogging logging
         ){
             this.settingsProvider = settingsProvider;
-            this.channelProvider = channelProvider;
+            this.playlistProvider = playlistProvider;
             this.epgProvider = epgProvider;
             this.compression = compression;
             this.pluginHandler = pluginHandler;
@@ -73,7 +75,7 @@ namespace Couchpotato {
             }
 
             this.pluginHandler.Run(PluginType.BeforeChannel);
-            var channelResult = channelProvider.GetChannels(settings.M3uPath, settings);
+            var channelResult = playlistProvider.GetChannels(settings.M3uPath, settings);
             this.pluginHandler.Run(PluginType.AfterChannel, channelResult);
 
             if(!channelResult.Channels.Any()){
@@ -94,7 +96,7 @@ namespace Couchpotato {
             }
 
             var outputM3uPath = Path.Combine(outputPath, "channels.m3u");
-            channelProvider.Save(outputM3uPath, channelResult.Channels);
+            playlistProvider.Save(outputM3uPath, channelResult.Channels);
 
             var outputEpgPath = Path.Combine(outputPath, "epg.xml");
             epgProvider.Save(outputEpgPath, epgFile);

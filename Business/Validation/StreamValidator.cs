@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Couchpotato.Business.Logging;
-using Couchpotato.Models;
 using CouchpotatoShared.Channel;
 
-namespace Couchpotato.Business{
+namespace Couchpotato.Business.Validation{
     public class StreamValidator:IStreamValidator{
         private readonly ILogging logging;
 

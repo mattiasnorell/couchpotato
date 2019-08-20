@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net;
+using Couchpotato.Business.Compression;
 using Couchpotato.Business.Logging;
 
 namespace Couchpotato.Business

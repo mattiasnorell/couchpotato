@@ -4,61 +4,52 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Couchpotato.Models;
 using Couchpotato.Business.Logging;
+using Couchpotato.Business.Validation;
 using CouchpotatoShared.Channel;
+using Couchpotato.Business.Playlist.Models;
+using Couchpotato.Business.Settings.Models;
 
-namespace Couchpotato.Business
+namespace Couchpotato.Business.Playlist
 {
-    public class ChannelProvider: IChannelProvider{
+    public class PlaylistProvider : IPlaylistProvider
+    {
         private readonly ISettingsProvider settingsProvider;
         private readonly IFileHandler fileHandler;
         private readonly IStreamValidator streamValidator;
         private readonly ILogging logging;
 
-        public ChannelProvider(ISettingsProvider settingsProvider, IFileHandler fileHandler, IStreamValidator streamValidator, ILogging logging) {
+        public PlaylistProvider(ISettingsProvider settingsProvider, IFileHandler fileHandler, IStreamValidator streamValidator, ILogging logging)
+        {
             this.settingsProvider = settingsProvider;
             this.fileHandler = fileHandler;
             this.streamValidator = streamValidator;
             this.logging = logging;
         }
 
-        public ChannelResult GetChannels(string path, Settings settings){
+        public ChannelResult GetChannels(string path, UserSettings settings)
+        {
             var result = new ChannelResult();
             var playlistFile = Load(path);
             var playlistItems = Parse(playlistFile);
 
             var streams = new List<Channel>();
 
-            if(settings.Channels.Any()){
+            if (settings.Channels.Any())
+            {
                 var channels = GetSelectedChannels(playlistItems, settings);
                 streams.AddRange(channels);
             }
 
-            if(settings.Groups.Any()){
+            if (settings.Groups.Any())
+            {
                 var groups = GetSelectedGroups(playlistItems, settings);
                 streams.AddRange(groups);
             }
-            
-            if(settings.ValidateStreams){
-                this.logging.Print("\nValidating streams. This might disconnect all active streams.");
-                var invalidStreams = this.streamValidator.ValidateStreams(streams);
 
-                if(invalidStreams != null && invalidStreams.Count > 0){
-                    this.logging.Info("\nBroken streams found, trying to find fallback channels");
-
-                    foreach(var invalidStreamTvgName in invalidStreams){
-                        var fallbackChannel = GetFallbackChannel(invalidStreamTvgName, playlistItems, settings);
-
-                        if(fallbackChannel != null){
-                            this.logging.Info($"- Fallback found for {invalidStreamTvgName}, now using {fallbackChannel.TvgName}");
-                            streams.Add(fallbackChannel);
-                        }else{
-                            this.logging.Warn($"- Sorry, no fallback found for {invalidStreamTvgName}");
-                        }
-                    }
-                    
-                }
+            if (settings.ValidateStreams)
+            {
+                ValidateStreams(streams, playlistItems, settings);
             }
 
             result.Channels = streams;
@@ -66,43 +57,78 @@ namespace Couchpotato.Business
             return result;
         }
 
-        private Channel GetFallbackChannel(string tvgName, List<PlaylistItem> playlistItems, Settings settings){
+        private void ValidateStreams(List<Channel> streams, List<PlaylistItem> playlistItems, UserSettings settings)
+        {
+            this.logging.Print("\nValidating streams. This might disconnect all active streams.");
+            var invalidStreams = this.streamValidator.ValidateStreams(streams);
+
+            if (invalidStreams != null && invalidStreams.Count > 0)
+            {
+                this.logging.Info("\nBroken streams found, trying to find fallback channels");
+
+                foreach (var invalidStreamTvgName in invalidStreams)
+                {
+                    var fallbackChannel = GetFallbackChannel(invalidStreamTvgName, playlistItems, settings);
+
+                    if (fallbackChannel != null)
+                    {
+                        this.logging.Info($"- Fallback found for {invalidStreamTvgName}, now using {fallbackChannel.TvgName}");
+                        streams.Add(fallbackChannel);
+                    }
+                    else
+                    {
+                        this.logging.Warn($"- Sorry, no fallback found for {invalidStreamTvgName}");
+                    }
+                }
+            }
+        }
+
+        private Channel GetFallbackChannel(string tvgName, List<PlaylistItem> playlistItems, UserSettings settings)
+        {
             var specificFallback = GetChannelSpecificFallback(tvgName, playlistItems, settings);
-            if(specificFallback != null){
+            if (specificFallback != null)
+            {
                 return specificFallback;
             }
 
             var defaultFallback = GetDefaultFallback(tvgName, playlistItems, settings);
-            if(defaultFallback != null){
+            if (defaultFallback != null)
+            {
                 return defaultFallback;
             }
 
-            return null;            
+            return null;
         }
 
-        private Channel GetDefaultFallback(string tvgName, List<PlaylistItem> playlistItems, Settings settings){
-            
-            if(settings.DefaultChannelFallbacks != null){
+        private Channel GetDefaultFallback(string tvgName, List<PlaylistItem> playlistItems, UserSettings settings)
+        {
+
+            if (settings.DefaultChannelFallbacks != null)
+            {
                 return null;
             }
 
             var fallbackChannelTvgNames = settings.DefaultChannelFallbacks.FirstOrDefault(e => tvgName.Contains(e.Key));
 
-            if(fallbackChannelTvgNames == null || fallbackChannelTvgNames.Value == null){
+            if (fallbackChannelTvgNames == null || fallbackChannelTvgNames.Value == null)
+            {
                 return null;
             }
 
-            foreach(var fallbackChannelTvgName in fallbackChannelTvgNames.Value){
+            foreach (var fallbackChannelTvgName in fallbackChannelTvgNames.Value)
+            {
                 var fallbackTvgName = tvgName.Replace(fallbackChannelTvgNames.Key, fallbackChannelTvgName);
                 var fallbackChannel = playlistItems.FirstOrDefault(e => e.TvgName == fallbackTvgName);
 
-                if(fallbackChannel != null){
+                if (fallbackChannel != null)
+                {
                     var isValid = this.streamValidator.ValidateStreamByUrl(fallbackChannel.Url);
 
-                    if(!isValid){
+                    if (!isValid)
+                    {
                         continue;
                     }
-                    
+
                     var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
                     return MapChannel(fallbackChannel, channelSetting, settings);
                 }
@@ -111,39 +137,49 @@ namespace Couchpotato.Business
             return null;
         }
 
-        private Channel GetChannelSpecificFallback(string tvgName, List<PlaylistItem> playlistItems, Settings settings){
+        private Channel GetChannelSpecificFallback(string tvgName, List<PlaylistItem> playlistItems, UserSettings settings)
+        {
             var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
-            if(channelSetting != null && channelSetting.FallbackChannels != null){
-               foreach(var fallbackChannelId in channelSetting.FallbackChannels){
-                   var fallbackChannel = playlistItems.FirstOrDefault(e => e.TvgName == fallbackChannelId);
+            if (channelSetting != null && channelSetting.FallbackChannels != null)
+            {
+                foreach (var fallbackChannelId in channelSetting.FallbackChannels)
+                {
+                    var fallbackChannel = playlistItems.FirstOrDefault(e => e.TvgName == fallbackChannelId);
 
-                   if(fallbackChannel != null){
-                       var isValid = this.streamValidator.ValidateStreamByUrl(fallbackChannel.Url);
+                    if (fallbackChannel != null)
+                    {
+                        var isValid = this.streamValidator.ValidateStreamByUrl(fallbackChannel.Url);
 
-                        if(isValid){
-                            return MapChannel(fallbackChannel, channelSetting, settings);  
+                        if (isValid)
+                        {
+                            return MapChannel(fallbackChannel, channelSetting, settings);
                         }
-                   }
-               };
+                    }
+                };
             }
 
             return null;
         }
 
-        private Channel MapChannel(PlaylistItem playlistItem, SettingsChannel channelSetting, Settings settings){
+        private Channel MapChannel(PlaylistItem playlistItem, UserSettingsChannel channelSetting, UserSettings settings)
+        {
             var channel = new Channel();
             channel.TvgName = playlistItem.TvgName;
             channel.TvgId = channelSetting.EpgId ?? playlistItem.TvgId;
             channel.TvgLogo = playlistItem.TvgLogo;
             channel.Url = playlistItem.Url;
 
-            if(!string.IsNullOrEmpty(channelSetting.CustomGroupName) || !string.IsNullOrEmpty(settings.DefaultChannelGroup)){
+            if (!string.IsNullOrEmpty(channelSetting.CustomGroupName) || !string.IsNullOrEmpty(settings.DefaultChannelGroup))
+            {
                 channel.GroupTitle = channelSetting.CustomGroupName ?? settings.DefaultChannelGroup;
-            }else{
+            }
+            else
+            {
                 channel.GroupTitle = playlistItem.GroupTitle;
             }
 
-            if(!string.IsNullOrEmpty(channelSetting.FriendlyName)){
+            if (!string.IsNullOrEmpty(channelSetting.FriendlyName))
+            {
                 channel.FriendlyName = channelSetting.FriendlyName;
             }
 
@@ -152,25 +188,32 @@ namespace Couchpotato.Business
             return channel;
         }
 
-        private List<Channel> GetSelectedChannels(List<PlaylistItem> channels, Settings settings){
-            
+        private List<Channel> GetSelectedChannels(List<PlaylistItem> channels, UserSettings settings)
+        {
+
             var streams = new List<Channel>();
             var brokenStreams = new List<String>();
 
-            foreach(var channel in settings.Channels){
+            foreach (var channel in settings.Channels)
+            {
                 var channelSetting = channels.FirstOrDefault(e => e.TvgName == channel.ChannelId);
-                if(channelSetting != null){
-                    var channelItem = MapChannel(channelSetting, channel, settings);     
+                if (channelSetting != null)
+                {
+                    var channelItem = MapChannel(channelSetting, channel, settings);
                     streams.Add(channelItem);
-                }else{
+                }
+                else
+                {
                     brokenStreams.Add(channel.ChannelId);
                 }
             }
 
-            if(brokenStreams.Any()){
+            if (brokenStreams.Any())
+            {
                 this.logging.Warn($"\nCan't find some channels:");
 
-                foreach(var brokenStream in brokenStreams){
+                foreach (var brokenStream in brokenStreams)
+                {
                     this.logging.Warn($"- {brokenStream }");
                 }
             }
@@ -179,13 +222,16 @@ namespace Couchpotato.Business
         }
 
 
-        private List<Channel> GetSelectedGroups(List<PlaylistItem> channels, Settings settings){
+        private List<Channel> GetSelectedGroups(List<PlaylistItem> channels, UserSettings settings)
+        {
             var streams = new List<Channel>();
 
-            foreach(var item in channels){
+            foreach (var item in channels)
+            {
                 var groupSettings = settings.Groups.FirstOrDefault(e => e.GroupId == item.GroupTitle);
-                
-                if(groupSettings != null){
+
+                if (groupSettings != null)
+                {
                     var group = new Channel();
                     group.TvgName = item.TvgName;
                     group.TvgId = item.TvgId;
@@ -194,7 +240,8 @@ namespace Couchpotato.Business
                     group.GroupTitle = groupSettings.FriendlyName ?? groupSettings.GroupId;
                     group.Order = settings.Channels.Count() + settings.Groups.IndexOf(groupSettings);
 
-                    if(groupSettings.Exclude != null && groupSettings.Exclude.Any(e => e == item.TvgName)){
+                    if (groupSettings.Exclude != null && groupSettings.Exclude.Any(e => e == item.TvgName))
+                    {
                         continue;
                     }
 
@@ -205,20 +252,22 @@ namespace Couchpotato.Business
             return streams;
         }
 
-        private string[] Load(string path){
+        private string[] Load(string path)
+        {
             this.logging.Print("Loading channel list");
             var result = this.fileHandler.GetSource(path);
 
-            if(result == null){
+            if (result == null)
+            {
                 this.logging.Error($"- Couldn't download file {path}");
-                return new string[]{};
+                return new string[] { };
             }
-            
+
             using (var sr = new StreamReader(result))
             {
                 string line;
                 var list = new List<string>();
-                
+
                 while ((line = sr.ReadLine()) != null)
                 {
                     list.Add(line);
@@ -228,10 +277,12 @@ namespace Couchpotato.Business
             }
         }
 
-        public void Save(string path, List<Channel> channels){
-            this.logging.Print($"Writing M3U-file to {path}"); 
+        public void Save(string path, List<Channel> channels)
+        {
+            this.logging.Print($"Writing M3U-file to {path}");
 
-            using (System.IO.StreamWriter writeFile =  new System.IO.StreamWriter(path, false, new UTF8Encoding(true))) {
+            using (System.IO.StreamWriter writeFile = new System.IO.StreamWriter(path, false, new UTF8Encoding(true)))
+            {
                 writeFile.WriteLine("#EXTM3U");
 
                 foreach (Channel channel in channels.OrderBy(e => e.Order))
@@ -252,32 +303,35 @@ namespace Couchpotato.Business
             {
                 var item = file[i];
 
-                if(!item.StartsWith("#EXTINF:-1")){
+                if (!item.StartsWith("#EXTINF:-1"))
+                {
                     continue;
-                } 
+                }
 
                 var playlistItem = new PlaylistItem();
                 playlistItem.TvgName = GetValueForAttribute(item, "tvg-name");
                 playlistItem.GroupTitle = GetValueForAttribute(item, "group-title");
-                playlistItem.TvgId =  GetValueForAttribute(item, "tvg-id");
-                playlistItem.TvgLogo =  GetValueForAttribute(item, "tvg-logo");
-                playlistItem.Url =  file[i + 1];
-                
+                playlistItem.TvgId = GetValueForAttribute(item, "tvg-id");
+                playlistItem.TvgLogo = GetValueForAttribute(item, "tvg-logo");
+                playlistItem.Url = file[i + 1];
+
                 streams.Add(playlistItem);
-                        
+
                 this.logging.PrintSameLine($"Crunching playlist data: {((decimal)i / (decimal)numberOfLines).ToString("0%")}");
             }
 
             return streams;
         }
 
-        private string GetValueForAttribute(string item, string attributeName){
+        private string GetValueForAttribute(string item, string attributeName)
+        {
             var result = new Regex(attributeName + @"=\""([^""]*)\""", RegexOptions.Singleline).Match(item);
-            
-            if(result == null || result.Groups.Count < 1){
+
+            if (result == null || result.Groups.Count < 1)
+            {
                 return string.Empty;
             }
-            
+
             return result.Groups[1].Value;
         }
     }

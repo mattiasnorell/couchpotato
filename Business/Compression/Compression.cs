@@ -3,7 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using Couchpotato.Business.Logging;
 
-namespace Couchpotato.Business{
+namespace Couchpotato.Business.Compression{
     public class Compression : ICompression
     {
         private readonly ILogging logging;

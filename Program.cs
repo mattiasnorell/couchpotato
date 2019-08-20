@@ -1,9 +1,13 @@
 ﻿using System.IO;
 using Autofac;
 using Couchpotato.Business;
+using Couchpotato.Business.Playlist;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Plugins;
 using Microsoft.Extensions.Configuration;
+using Couchpotato.Business.Compression;
+using Couchpotato.Business.Settings;
+using Couchpotato.Business.Validation;
 
 namespace Couchpotato
 {
@@ -19,7 +23,7 @@ namespace Couchpotato
             builder.Register(context => config).As<IConfiguration>();
             builder.RegisterType<Application>().As<IApplication>();
             builder.RegisterType<Compression>().As<ICompression>();
-            builder.RegisterType<ChannelProvider>().As<IChannelProvider>();
+            builder.RegisterType<PlaylistProvider>().As<IPlaylistProvider>();
             builder.RegisterType<EpgProvider>().As<IEpgProvider>();
             builder.RegisterType<FileHandler>().As<IFileHandler>();
             builder.RegisterType<SettingsProvider>().As<ISettingsProvider>();
