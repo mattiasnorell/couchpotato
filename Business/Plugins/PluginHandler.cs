@@ -93,8 +93,8 @@ namespace Couchpotato.Business.Plugins
 
                 var settings = GetSettings(type.Name);
                 
-                var requireSettingsAttribute = (RequireSettingsAttribute)type.GetCustomAttribute(typeof(RequireSettingsAttribute), false);
-                if(settings.Count == 0 && requireSettingsAttribute != null){
+                var requireSettings = (RequireSettingsAttribute)type.GetCustomAttribute(typeof(RequireSettingsAttribute), false) != null;
+                if(settings.Count == 0 && requireSettings){
                     this.logging.Info($"PluginHandler :: Can't load {type.Name}, settings not found");
                     continue;
                 }

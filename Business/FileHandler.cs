@@ -23,7 +23,9 @@ namespace Couchpotato.Business
             using (var client = new WebClient())
             {
                 try{
-                    return client.OpenRead(path);
+                    var result = client.OpenRead(path);
+
+                    return result;
                 }catch (Exception)
                 {
                     return null;
@@ -38,6 +40,12 @@ namespace Couchpotato.Business
 
                 if(path.EndsWith(".gz")){
                     this.logging.Print($"- Decompressing file");
+
+                    if(file == null){
+                        this.logging.Error($"  File is empty and/or corrupt. Can't decompress {path}");
+                        return null;
+                    }
+
                     return compression.Decompress(file);
                 }
 
@@ -50,10 +58,10 @@ namespace Couchpotato.Business
                     return null;
                 }
 
-                var file =  new FileStream(path, FileMode.Open);
+                var file = new FileStream(path, FileMode.Open);
 
                 if(path.EndsWith(".gz")){
-                    Console.WriteLine($"- Decompressed file");
+                    this.logging.Print($"- Decompressed file");
                     return compression.Decompress(file);
                 }
 

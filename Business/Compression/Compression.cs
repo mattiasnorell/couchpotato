@@ -15,14 +15,14 @@ namespace Couchpotato.Business.Compression{
         }
         public void Compress(string path)
         {
-            FileInfo sourceFile = new FileInfo(path);
-            FileInfo targetFileName = new FileInfo($"{sourceFile.FullName}.gz");
+            var sourceFile = new FileInfo(path);
+            var targetFileName = new FileInfo($"{sourceFile.FullName}.gz");
                         
-            using (FileStream sourceFileStream = sourceFile.OpenRead())
+            using (var sourceFileStream = sourceFile.OpenRead())
             {
-                using (FileStream targetFileStream = targetFileName.Create())
+                using (var targetFileStream = targetFileName.Create())
                     {
-                    using (GZipStream gzipStream = new GZipStream(targetFileStream, CompressionMode.Compress))
+                    using (var gzipStream = new GZipStream(targetFileStream, CompressionMode.Compress))
                     {
                         try
                         {
