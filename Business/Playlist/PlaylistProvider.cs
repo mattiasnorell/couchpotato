@@ -103,7 +103,7 @@ namespace Couchpotato.Business.Playlist
         private Channel GetDefaultFallback(string tvgName, List<PlaylistItem> playlistItems, UserSettings settings)
         {
 
-            if (settings.DefaultChannelFallbacks != null)
+            if (settings.DefaultChannelFallbacks == null)
             {
                 return null;
             }
