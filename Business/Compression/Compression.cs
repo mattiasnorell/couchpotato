@@ -13,6 +13,7 @@ namespace Couchpotato.Business.Compression{
         ){
             this.logging = logging;
         }
+        
         public void Compress(string path)
         {
             var sourceFile = new FileInfo(path);

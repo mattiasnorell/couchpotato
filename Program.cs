@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Couchpotato.Business.Compression;
 using Couchpotato.Business.Settings;
 using Couchpotato.Business.Validation;
+using Couchpotato.Business.IO;
 
 namespace Couchpotato
 {
@@ -24,6 +25,7 @@ namespace Couchpotato
             builder.RegisterType<Application>().As<IApplication>();
             builder.RegisterType<Compression>().As<ICompression>();
             builder.RegisterType<PlaylistProvider>().As<IPlaylistProvider>();
+            builder.RegisterType<PlaylistParser>().As<IPlaylistParser>();
             builder.RegisterType<EpgProvider>().As<IEpgProvider>();
             builder.RegisterType<FileHandler>().As<IFileHandler>();
             builder.RegisterType<SettingsProvider>().As<ISettingsProvider>();

@@ -14,11 +14,11 @@ namespace Couchpotato.Business.Validation{
         }
 
         public bool ValidateStreamByUrl(string url){
-            return CheckChannelAvailability(url);
+            return CheckAvailability(url);
         }
 
         public bool ValidateSingleStream(Channel stream){
-            return CheckChannelAvailability(stream.Url);
+            return CheckAvailability(stream.Url);
         }
 
         public List<String> ValidateStreams(List<Channel> streams){
@@ -27,7 +27,7 @@ namespace Couchpotato.Business.Validation{
             var invalidStreams = new List<string>();
 
             foreach(var stream in streams.ToList()){
-                if(!CheckChannelAvailability(stream.Url)){
+                if(!CheckAvailability(stream.Url)){
                     invalidStreams.Add(stream.TvgName);
                     streams.Remove(stream);
                 }
@@ -39,7 +39,7 @@ namespace Couchpotato.Business.Validation{
             return invalidStreams;
         }
 
-        private bool CheckChannelAvailability(string url){
+        private bool CheckAvailability(string url){
             var request  = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "GET";
             const int maxBytes = 1024;

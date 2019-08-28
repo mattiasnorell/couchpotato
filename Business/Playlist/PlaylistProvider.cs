@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Validation;
 using CouchpotatoShared.Channel;
 using Couchpotato.Business.Playlist.Models;
 using Couchpotato.Business.Settings.Models;
+using Couchpotato.Business.IO;
 
 namespace Couchpotato.Business.Playlist
 {
@@ -18,33 +18,35 @@ namespace Couchpotato.Business.Playlist
         private readonly IFileHandler fileHandler;
         private readonly IStreamValidator streamValidator;
         private readonly ILogging logging;
+        private readonly IPlaylistParser playlistParser;
 
-        public PlaylistProvider(ISettingsProvider settingsProvider, IFileHandler fileHandler, IStreamValidator streamValidator, ILogging logging)
+        public PlaylistProvider(ISettingsProvider settingsProvider, IFileHandler fileHandler, IStreamValidator streamValidator, ILogging logging, IPlaylistParser playlistParser)
         {
             this.settingsProvider = settingsProvider;
             this.fileHandler = fileHandler;
             this.streamValidator = streamValidator;
             this.logging = logging;
+            this.playlistParser = playlistParser;
         }
 
-        public ChannelResult GetChannels(string path, UserSettings settings)
+        public ChannelResult GetPlaylist(string path, UserSettings settings)
         {
             var result = new ChannelResult();
             var playlistFile = Load(path);
-            var playlistItems = Parse(playlistFile);
+            var playlistItems = playlistParser.Parse(playlistFile);
 
             var streams = new List<Channel>();
 
             if (settings.Channels.Any())
             {
-                var channels = GetSelectedChannels(playlistItems, settings);
-                streams.AddRange(channels);
+                var items = GetSelectedChannels(playlistItems, settings);
+                streams.AddRange(items);
             }
 
             if (settings.Groups.Any())
             {
-                var groups = GetSelectedGroups(playlistItems, settings);
-                streams.AddRange(groups);
+                var groupItems = GetSelectedGroups(playlistItems, settings);
+                streams.AddRange(groupItems);
             }
 
             if (settings.ValidateStreams)
@@ -68,12 +70,12 @@ namespace Couchpotato.Business.Playlist
 
                 foreach (var invalidStreamTvgName in invalidStreams)
                 {
-                    var fallbackChannel = GetFallbackChannel(invalidStreamTvgName, playlistItems, settings);
+                    var fallbackStream = GetFallbackStream(invalidStreamTvgName, playlistItems, settings);
 
-                    if (fallbackChannel != null)
+                    if (fallbackStream != null)
                     {
-                        this.logging.Info($"- Fallback found for {invalidStreamTvgName}, now using {fallbackChannel.TvgName}");
-                        streams.Add(fallbackChannel);
+                        this.logging.Info($"- Fallback found for {invalidStreamTvgName}, now using {fallbackStream.TvgName}");
+                        streams.Add(fallbackStream);
                     }
                     else
                     {
@@ -83,24 +85,24 @@ namespace Couchpotato.Business.Playlist
             }
         }
 
-        private Channel GetFallbackChannel(string tvgName, List<PlaylistItem> playlistItems, UserSettings settings)
+        private Channel GetFallbackStream(string tvgName, List<PlaylistItem> playlistItems, UserSettings settings)
         {
-            var specificFallback = GetChannelSpecificFallback(tvgName, playlistItems, settings);
+            var specificFallback = GetSpecificFallback(tvgName, playlistItems, settings);
             if (specificFallback != null)
             {
                 return specificFallback;
             }
 
-            var defaultFallback = GetDefaultFallback(tvgName, playlistItems, settings);
-            if (defaultFallback != null)
+            var fallbackStream = GetDefaultFallback(tvgName, playlistItems, settings);
+            if (fallbackStream != null)
             {
-                return defaultFallback;
+                return fallbackStream;
             }
 
             return null;
         }
 
-        private Channel GetDefaultFallback(string tvgName, List<PlaylistItem> playlistItems, UserSettings settings)
+        private Channel GetDefaultFallback(string originalTvgName, List<PlaylistItem> playlistItems, UserSettings settings)
         {
 
             if (settings.DefaultChannelFallbacks == null)
@@ -108,36 +110,37 @@ namespace Couchpotato.Business.Playlist
                 return null;
             }
 
-            var fallbackChannelTvgNames = settings.DefaultChannelFallbacks.FirstOrDefault(e => tvgName.Contains(e.Key));
+            var tvgNames = settings.DefaultChannelFallbacks.FirstOrDefault(e => originalTvgName.Contains(e.Key));
 
-            if (fallbackChannelTvgNames == null || fallbackChannelTvgNames.Value == null)
+            if (tvgNames == null || tvgNames.Value == null)
             {
                 return null;
             }
 
-            foreach (var fallbackChannelTvgName in fallbackChannelTvgNames.Value)
+            foreach (var tvgName in tvgNames.Value)
             {
-                var fallbackTvgName = tvgName.Replace(fallbackChannelTvgNames.Key, fallbackChannelTvgName);
-                var fallbackChannel = playlistItems.FirstOrDefault(e => e.TvgName == fallbackTvgName);
+                var fallbackTvgName = tvgName.Replace(tvgNames.Key, tvgName);
+                var fallback = playlistItems.FirstOrDefault(e => e.TvgName == fallbackTvgName);
 
-                if (fallbackChannel != null)
+                if (fallback == null)
                 {
-                    var isValid = this.streamValidator.ValidateStreamByUrl(fallbackChannel.Url);
-
-                    if (!isValid)
-                    {
-                        continue;
-                    }
-
-                    var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
-                    return MapChannel(fallbackChannel, channelSetting, settings);
+                    continue;
                 }
+                
+                var isValid = this.streamValidator.ValidateStreamByUrl(fallback.Url);
+                if (!isValid)
+                {
+                    continue;
+                }
+
+                var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
+                return Map(fallback, channelSetting, settings);
             };
 
             return null;
         }
 
-        private Channel GetChannelSpecificFallback(string tvgName, List<PlaylistItem> playlistItems, UserSettings settings)
+        private Channel GetSpecificFallback(string tvgName, List<PlaylistItem> playlistItems, UserSettings settings)
         {
             var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
             if (channelSetting != null && channelSetting.FallbackChannels != null)
@@ -146,22 +149,25 @@ namespace Couchpotato.Business.Playlist
                 {
                     var fallbackChannel = playlistItems.FirstOrDefault(e => e.TvgName == fallbackChannelId);
 
-                    if (fallbackChannel != null)
+                    if (fallbackChannel == null)
                     {
-                        var isValid = this.streamValidator.ValidateStreamByUrl(fallbackChannel.Url);
-
-                        if (isValid)
-                        {
-                            return MapChannel(fallbackChannel, channelSetting, settings);
-                        }
+                        continue;
                     }
+
+                    var isValid = this.streamValidator.ValidateStreamByUrl(fallbackChannel.Url);
+
+                    if (isValid)
+                    {
+                        return Map(fallbackChannel, channelSetting, settings);
+                    }
+                
                 };
             }
 
             return null;
         }
 
-        private Channel MapChannel(PlaylistItem playlistItem, UserSettingsChannel channelSetting, UserSettings settings)
+        private Channel Map(PlaylistItem playlistItem, UserSettingsChannel channelSetting, UserSettings settings)
         {
             var channel = new Channel();
             channel.TvgName = playlistItem.TvgName;
@@ -199,7 +205,7 @@ namespace Couchpotato.Business.Playlist
                 var channelSetting = channels.FirstOrDefault(e => e.TvgName == channel.ChannelId);
                 if (channelSetting != null)
                 {
-                    var channelItem = MapChannel(channelSetting, channel, settings);
+                    var channelItem = Map(channelSetting, channel, settings);
                     streams.Add(channelItem);
                 }
                 else
@@ -230,23 +236,25 @@ namespace Couchpotato.Business.Playlist
             {
                 var groupSettings = settings.Groups.FirstOrDefault(e => e.GroupId == item.GroupTitle);
 
-                if (groupSettings != null)
+                if (groupSettings == null)
                 {
-                    var group = new Channel();
-                    group.TvgName = item.TvgName;
-                    group.TvgId = item.TvgId;
-                    group.TvgLogo = item.TvgLogo;
-                    group.Url = item.Url;
-                    group.GroupTitle = groupSettings.FriendlyName ?? groupSettings.GroupId;
-                    group.Order = settings.Channels.Count() + settings.Groups.IndexOf(groupSettings);
-
-                    if (groupSettings.Exclude != null && groupSettings.Exclude.Any(e => e == item.TvgName))
-                    {
-                        continue;
-                    }
-
-                    streams.Add(group);
+                    continue;
                 }
+                
+                var group = new Channel();
+                group.TvgName = item.TvgName;
+                group.TvgId = item.TvgId;
+                group.TvgLogo = item.TvgLogo;
+                group.Url = item.Url;
+                group.GroupTitle = groupSettings.FriendlyName ?? groupSettings.GroupId;
+                group.Order = settings.Channels.Count() + settings.Groups.IndexOf(groupSettings);
+
+                if (groupSettings.Exclude != null && groupSettings.Exclude.Any(e => e == item.TvgName))
+                {
+                    continue;
+                }
+
+                streams.Add(group);
             }
 
             return streams;
@@ -292,47 +300,6 @@ namespace Couchpotato.Business.Playlist
                     writeFile.WriteLine(channel.Url);
                 }
             }
-        }
-
-        private List<PlaylistItem> Parse(string[] file)
-        {
-            var streams = new List<PlaylistItem>();
-            var numberOfLines = file.Length;
-
-            for (var i = 1; i < numberOfLines; i = i + 2)
-            {
-                var item = file[i];
-
-                if (!item.StartsWith("#EXTINF:-1"))
-                {
-                    continue;
-                }
-
-                var playlistItem = new PlaylistItem();
-                playlistItem.TvgName = GetValueForAttribute(item, "tvg-name");
-                playlistItem.GroupTitle = GetValueForAttribute(item, "group-title");
-                playlistItem.TvgId = GetValueForAttribute(item, "tvg-id");
-                playlistItem.TvgLogo = GetValueForAttribute(item, "tvg-logo");
-                playlistItem.Url = file[i + 1];
-
-                streams.Add(playlistItem);
-
-                this.logging.PrintSameLine($"Crunching playlist data: {((decimal)i / (decimal)numberOfLines).ToString("0%")}");
-            }
-
-            return streams;
-        }
-
-        private string GetValueForAttribute(string item, string attributeName)
-        {
-            var result = new Regex(attributeName + @"=\""([^""]*)\""", RegexOptions.Singleline).Match(item);
-
-            if (result == null || result.Groups.Count < 1)
-            {
-                return string.Empty;
-            }
-
-            return result.Groups[1].Value;
         }
     }
 }

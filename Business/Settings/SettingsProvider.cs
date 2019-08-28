@@ -1,5 +1,6 @@
 using System.IO;
 using Couchpotato.Business.Logging;
+using Couchpotato.Business.IO;
 using Newtonsoft.Json;
 using Couchpotato.Business.Settings.Models;
 

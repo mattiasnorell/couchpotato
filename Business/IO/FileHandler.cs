@@ -4,7 +4,7 @@ using System.Net;
 using Couchpotato.Business.Compression;
 using Couchpotato.Business.Logging;
 
-namespace Couchpotato.Business
+namespace Couchpotato.Business.IO
 {
     public class FileHandler:IFileHandler
     {

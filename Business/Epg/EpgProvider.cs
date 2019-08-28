@@ -6,6 +6,7 @@ using System.Xml.Serialization;
 using Couchpotato.Business.Logging;
 using CouchpotatoShared.Epg;
 using Couchpotato.Business.Settings.Models;
+using Couchpotato.Business.IO;
 
 namespace Couchpotato.Business
 {

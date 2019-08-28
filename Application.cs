@@ -8,6 +8,7 @@ using Couchpotato.Business.Compression;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Plugins;
 using CouchpotatoShared.Plugins;
+using Couchpotato.Business.IO;
 
 namespace Couchpotato {
     class Application: IApplication{
@@ -75,7 +76,7 @@ namespace Couchpotato {
             }
 
             this.pluginHandler.Run(PluginType.BeforeChannel);
-            var channelResult = playlistProvider.GetChannels(settings.M3uPath, settings);
+            var channelResult = playlistProvider.GetPlaylist(settings.M3uPath, settings);
             this.pluginHandler.Run(PluginType.AfterChannel, channelResult);
 
             if(!channelResult.Channels.Any()){
