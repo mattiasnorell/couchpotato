@@ -9,6 +9,7 @@ using CouchpotatoShared.Channel;
 using Couchpotato.Business.Playlist.Models;
 using Couchpotato.Business.Settings.Models;
 using Couchpotato.Business.IO;
+using Couchpotato.Business.Settings;
 
 namespace Couchpotato.Business.Playlist
 {

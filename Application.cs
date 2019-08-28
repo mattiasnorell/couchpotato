@@ -8,7 +8,7 @@ using Couchpotato.Business.Compression;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Plugins;
 using CouchpotatoShared.Plugins;
-using Couchpotato.Business.IO;
+using Couchpotato.Business.Settings;
 
 namespace Couchpotato {
     class Application: IApplication{

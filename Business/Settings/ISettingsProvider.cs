@@ -1,7 +1,9 @@
 using Couchpotato.Business.Settings.Models;
 
-namespace Couchpotato.Business{
-    public interface ISettingsProvider{
+namespace Couchpotato.Business.Settings
+{
+    public interface ISettingsProvider
+    {
         UserSettings Load(string path);
     }
 }
