@@ -127,7 +127,7 @@ namespace Couchpotato.Business.Playlist
                 {
                     continue;
                 }
-                
+
                 var isValid = this.streamValidator.ValidateStreamByUrl(fallback.Url);
                 if (!isValid)
                 {
@@ -161,7 +161,7 @@ namespace Couchpotato.Business.Playlist
                     {
                         return Map(fallbackChannel, channelSetting, settings);
                     }
-                
+
                 };
             }
 
@@ -229,33 +229,36 @@ namespace Couchpotato.Business.Playlist
         }
 
 
-        private List<Channel> GetSelectedGroups(List<PlaylistItem> channels, UserSettings settings)
+        private List<Channel> GetSelectedGroups(List<PlaylistItem> playlistItems, UserSettings settings)
         {
             var streams = new List<Channel>();
 
-            foreach (var item in channels)
+            foreach (var group in settings.Groups)
             {
-                var groupSettings = settings.Groups.FirstOrDefault(e => e.GroupId == item.GroupTitle);
+                var groupItems = playlistItems.Where(e => e.GroupTitle == group.GroupId).ToList();
 
-                if (groupSettings == null)
-                {
-                    continue;
-                }
-                
-                var group = new Channel();
-                group.TvgName = item.TvgName;
-                group.TvgId = item.TvgId;
-                group.TvgLogo = item.TvgLogo;
-                group.Url = item.Url;
-                group.GroupTitle = groupSettings.FriendlyName ?? groupSettings.GroupId;
-                group.Order = settings.Channels.Count() + settings.Groups.IndexOf(groupSettings);
-
-                if (groupSettings.Exclude != null && groupSettings.Exclude.Any(e => e == item.TvgName))
+                if (groupItems == null || !groupItems.Any())
                 {
                     continue;
                 }
 
-                streams.Add(group);
+                foreach (var groupItem in groupItems)
+                {
+                    var stream = new Channel();
+                    stream.TvgName = groupItem.TvgName;
+                    stream.TvgId = groupItem.TvgId;
+                    stream.TvgLogo = groupItem.TvgLogo;
+                    stream.Url = groupItem.Url;
+                    stream.GroupTitle = group.FriendlyName ?? group.GroupId;
+                    stream.Order = settings.Channels.Count() + groupItems.IndexOf(groupItem);
+
+                    if (group.Exclude != null && group.Exclude.Any(e => e == groupItem.TvgName))
+                    {
+                        continue;
+                    }
+
+                    streams.Add(stream);
+                }
             }
 
             return streams;
