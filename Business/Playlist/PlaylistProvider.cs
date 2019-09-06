@@ -121,13 +121,13 @@ namespace Couchpotato.Business.Playlist
             foreach (var tvgName in tvgNames.Value)
             {
                 var fallbackTvgName = tvgName.Replace(tvgNames.Key, tvgName);
-                var fallback = playlistItems[fallbackTvgName];
 
-                if (fallback == null)
+                if (!playlistItems.ContainsKey(fallbackTvgName))
                 {
                     continue;
                 }
 
+                var fallback = playlistItems[fallbackTvgName];
                 var isValid = this.streamValidator.ValidateStreamByUrl(fallback.Url);
                 if (!isValid)
                 {
@@ -148,8 +148,13 @@ namespace Couchpotato.Business.Playlist
             {
                 foreach (var fallbackChannelId in channelSetting.FallbackChannels)
                 {
-                    var fallbackChannel = playlistItems[fallbackChannelId];
 
+                    if (!playlistItems.ContainsKey(fallbackChannelId))
+                    {
+                        continue;
+                    }
+                    
+                    var fallbackChannel = playlistItems[fallbackChannelId];
                     if (fallbackChannel == null)
                     {
                         continue;
