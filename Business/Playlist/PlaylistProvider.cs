@@ -60,7 +60,7 @@ namespace Couchpotato.Business.Playlist
             return result;
         }
 
-        private void ValidateStreams(List<Channel> streams, List<PlaylistItem> playlistItems, UserSettings settings)
+        private void ValidateStreams(List<Channel> streams, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
             this.logging.Print("\nValidating streams. This might disconnect all active streams.");
             var invalidStreams = this.streamValidator.ValidateStreams(streams);
@@ -86,7 +86,7 @@ namespace Couchpotato.Business.Playlist
             }
         }
 
-        private Channel GetFallbackStream(string tvgName, List<PlaylistItem> playlistItems, UserSettings settings)
+        private Channel GetFallbackStream(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
             var specificFallback = GetSpecificFallback(tvgName, playlistItems, settings);
             if (specificFallback != null)
@@ -103,7 +103,7 @@ namespace Couchpotato.Business.Playlist
             return null;
         }
 
-        private Channel GetDefaultFallback(string originalTvgName, List<PlaylistItem> playlistItems, UserSettings settings)
+        private Channel GetDefaultFallback(string originalTvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
 
             if (settings.DefaultChannelFallbacks == null)
@@ -121,7 +121,7 @@ namespace Couchpotato.Business.Playlist
             foreach (var tvgName in tvgNames.Value)
             {
                 var fallbackTvgName = tvgName.Replace(tvgNames.Key, tvgName);
-                var fallback = playlistItems.FirstOrDefault(e => e.TvgName == fallbackTvgName);
+                var fallback = playlistItems[fallbackTvgName];
 
                 if (fallback == null)
                 {
@@ -141,14 +141,14 @@ namespace Couchpotato.Business.Playlist
             return null;
         }
 
-        private Channel GetSpecificFallback(string tvgName, List<PlaylistItem> playlistItems, UserSettings settings)
+        private Channel GetSpecificFallback(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
             var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
             if (channelSetting != null && channelSetting.FallbackChannels != null)
             {
                 foreach (var fallbackChannelId in channelSetting.FallbackChannels)
                 {
-                    var fallbackChannel = playlistItems.FirstOrDefault(e => e.TvgName == fallbackChannelId);
+                    var fallbackChannel = playlistItems[fallbackChannelId];
 
                     if (fallbackChannel == null)
                     {
@@ -195,17 +195,16 @@ namespace Couchpotato.Business.Playlist
             return channel;
         }
 
-        private List<Channel> GetSelectedChannels(List<PlaylistItem> channels, UserSettings settings)
+        private List<Channel> GetSelectedChannels(Dictionary<string, PlaylistItem> channels, UserSettings settings)
         {
-
             var streams = new List<Channel>();
             var brokenStreams = new List<String>();
 
             foreach (var channel in settings.Channels)
             {
-                var channelSetting = channels.FirstOrDefault(e => e.TvgName == channel.ChannelId);
-                if (channelSetting != null)
+                if (channels.ContainsKey(channel.ChannelId))
                 {
+                    var channelSetting = channels[channel.ChannelId];
                     var channelItem = Map(channelSetting, channel, settings);
                     streams.Add(channelItem);
                 }
@@ -229,13 +228,13 @@ namespace Couchpotato.Business.Playlist
         }
 
 
-        private List<Channel> GetSelectedGroups(List<PlaylistItem> playlistItems, UserSettings settings)
+        private List<Channel> GetSelectedGroups(Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
             var streams = new List<Channel>();
 
             foreach (var group in settings.Groups)
             {
-                var groupItems = playlistItems.Where(e => e.GroupTitle == group.GroupId).ToList();
+                var groupItems = playlistItems?.Values.Where(e => e.GroupTitle == group.GroupId).ToList();
 
                 if (groupItems == null || !groupItems.Any())
                 {
