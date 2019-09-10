@@ -8,25 +8,25 @@ namespace Couchpotato.Business.Settings
 {
     public class SettingsProvider :  ISettingsProvider
     {
-        private readonly IFileHandler fileHandler;
-        private readonly ILogging logging;
+        private readonly IFileHandler _fileHandler;
+        private readonly ILogging _logging;
 
         public SettingsProvider(
             IFileHandler fileHandler,
             ILogging logging
         ){
-            this.fileHandler = fileHandler;
-            this.logging = logging;
+            _fileHandler = fileHandler;
+            _logging = logging;
         }
 
         public UserSettings Load(string path)
         {
-            this.logging.Print("Loading settings from " + path);
+            _logging.Print("Loading settings from " + path);
             
-            var file = this.fileHandler.GetSource(path);
+            var file = _fileHandler.GetSource(path);
 
             if(file == null){
-                this.logging.Error($"- Couldn't load settingsfile from {path}");
+                _logging.Error($"- Couldn't load settingsfile from {path}");
                 return null;
             }
 

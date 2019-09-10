@@ -7,10 +7,10 @@ using CouchpotatoShared.Channel;
 
 namespace Couchpotato.Business.Validation{
     public class StreamValidator:IStreamValidator{
-        private readonly ILogging logging;
+        private readonly ILogging _logging;
 
         public StreamValidator(ILogging logging){
-            this.logging = logging;
+            _logging = logging;
         }
 
         public bool ValidateStreamByUrl(string url){
@@ -33,7 +33,7 @@ namespace Couchpotato.Business.Validation{
                 }
 
                 i++;
-                this.logging.PrintSameLine($"- Progress: {((decimal)i / (decimal)streamCount).ToString("0%")}");
+                _logging.PrintSameLine($"- Progress: {((decimal)i / (decimal)streamCount).ToString("0%")}");
             }
 
             return invalidStreams;

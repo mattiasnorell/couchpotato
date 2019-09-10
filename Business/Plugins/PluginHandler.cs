@@ -14,17 +14,17 @@ namespace Couchpotato.Business.Plugins
     {
         private string pluginPath = $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}/plugins";
         private Dictionary<PluginType, List<IPlugin>> registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
-        private readonly ILogging logging;
-        private readonly IConfiguration configuration;
+        private readonly ILogging _logging;
+        private readonly IConfiguration _configuration;
 
         public PluginHandler(
             ILogging logging,
             IConfiguration configuration
         ){
-            this.logging = logging;
-            this.configuration = configuration;
+            _logging = logging;
+            _configuration = configuration;
 
-            var pluginPathSettings = this.configuration.GetSection($"pluginPath")?.Value;
+            var pluginPathSettings = _configuration.GetSection($"pluginPath")?.Value;
             if(!string.IsNullOrEmpty(pluginPathSettings)){
                 this.pluginPath = pluginPathSettings;
             }
@@ -35,15 +35,15 @@ namespace Couchpotato.Business.Plugins
                 return;
             }
 
-            this.logging.Info($"\nRunning {pluginType}-plugins:");
+            _logging.Info($"\nRunning {pluginType}-plugins:");
             
             foreach(var plugin in this.registeredPlugins[pluginType]){
                 try{
-                    this.logging.Info($"- {plugin.GetType().Name}");
+                    _logging.Info($"- {plugin.GetType().Name}");
                     plugin.Run(streams, programGuide);
                 }catch (Exception e)
                 {
-                    this.logging.Error($"Error running plugin {plugin.GetType().Name}", e);
+                    _logging.Error($"Error running plugin {plugin.GetType().Name}", e);
                 }
             }
         }
@@ -55,7 +55,7 @@ namespace Couchpotato.Business.Plugins
             var pluginTypes = new List<Type>();
             
             if(!Directory.Exists(pluginPath)){
-                this.logging.Warn("Plugin folder not found");
+                _logging.Warn("Plugin folder not found");
                 
                 return;
             }
@@ -95,7 +95,7 @@ namespace Couchpotato.Business.Plugins
                 
                 var requireSettings = (RequireSettingsAttribute)type.GetCustomAttribute(typeof(RequireSettingsAttribute), false) != null;
                 if(settings.Count == 0 && requireSettings){
-                    this.logging.Info($"PluginHandler :: Can't load {type.Name}, settings not found");
+                    _logging.Info($"PluginHandler :: Can't load {type.Name}, settings not found");
                     continue;
                 }
 
@@ -107,21 +107,21 @@ namespace Couchpotato.Business.Plugins
 
                 registeredPlugins[attribute.EventName].Add(plugin);
 
-                this.logging.Info($"PluginHandler :: Loaded {type.Name}");
+                _logging.Info($"PluginHandler :: Loaded {type.Name}");
             }
         }
         
 
         private Dictionary<string, object> GetSettings(string key){
-            var pluginSettingsValues = this.configuration.GetSection($"plugins:{key}")?.GetChildren();
+            var pluginSettingsValues = _configuration.GetSection($"plugins:{key}")?.GetChildren();
             var pluginSettings = new Dictionary<string, object>();
 
-            if(pluginSettingsValues != null){
-                foreach(var setting in pluginSettingsValues){
-                    pluginSettings.Add(setting.Key, setting.Value);
-                }
+            if(pluginSettingsValues == null) return null;
+
+            foreach(var setting in pluginSettingsValues){
+                pluginSettings.Add(setting.Key, setting.Value);
             }
-            
+                        
             return pluginSettings;
         }
     }

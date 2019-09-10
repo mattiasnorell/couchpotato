@@ -6,12 +6,12 @@ using Couchpotato.Business.Logging;
 namespace Couchpotato.Business.Compression{
     public class Compression : ICompression
     {
-        private readonly ILogging logging;
+        private readonly ILogging _logging;
 
         public Compression(
             ILogging logging
         ){
-            this.logging = logging;
+            _logging = logging;
         }
         
         public void Compress(string path)
@@ -28,11 +28,11 @@ namespace Couchpotato.Business.Compression{
                         try
                         {
                             sourceFileStream.CopyTo(gzipStream);
-                            this.logging.Print($"Saving compressed file to {targetFileName}");
+                            _logging.Print($"Saving compressed file to {targetFileName}");
                         }
                         catch (Exception ex)
                         {
-                            this.logging.Error($"Compression failed", ex);
+                            _logging.Error($"Compression failed", ex);
                         }
                     }
                 }
@@ -43,7 +43,7 @@ namespace Couchpotato.Business.Compression{
             try{
                 return new GZipStream(originalFileStream, CompressionMode.Decompress);
             }catch(Exception ex){
-                this.logging.Error($"- Decompression failed", ex);
+                _logging.Error($"- Decompression failed", ex);
                 
                 return null;
             }

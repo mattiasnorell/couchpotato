@@ -7,13 +7,13 @@ namespace Couchpotato.Business.Playlist
 {
     public class PlaylistParser : IPlaylistParser
     {
-        private readonly ILogging logging;
+        private readonly ILogging _logging;
 
         public PlaylistParser(
             ILogging logging
         )
         {
-            this.logging = logging;
+            _logging = logging;
         }
 
        public Dictionary<string, PlaylistItem> Parse(string[] file)
@@ -30,20 +30,20 @@ namespace Couchpotato.Business.Playlist
                     continue;
                 }
                 
-                var playlistItem = new PlaylistItem();
                 var tvgName = GetValueForAttribute(item, "tvg-name");
-                
-                playlistItem.TvgName = tvgName;
-                playlistItem.GroupTitle = GetValueForAttribute(item, "group-title");
-                playlistItem.TvgId = GetValueForAttribute(item, "tvg-id");
-                playlistItem.TvgLogo = GetValueForAttribute(item, "tvg-logo");
-                playlistItem.Url = file[i + 1];
+                if(streams.ContainsKey(tvgName)) continue;
 
-                if(!streams.ContainsKey(tvgName)){
-                    streams.Add(tvgName, playlistItem);
-                }
+                var playlistItem = new PlaylistItem(){
+                    TvgName = tvgName,
+                    GroupTitle = GetValueForAttribute(item, "group-title"),
+                    TvgId = GetValueForAttribute(item, "tvg-id"),
+                    TvgLogo = GetValueForAttribute(item, "tvg-logo"),
+                    Url = file[i + 1]
+                };
+            
+                streams.Add(tvgName, playlistItem);
                 
-                this.logging.PrintSameLine($"Crunching playlist data: {((decimal)i / (decimal)numberOfLines).ToString("0%")}");
+                _logging.PrintSameLine($"Crunching playlist data: {((decimal)i / (decimal)numberOfLines).ToString("0%")}");
             }
 
             return streams;

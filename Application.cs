@@ -12,12 +12,12 @@ using Couchpotato.Business.Settings;
 
 namespace Couchpotato {
     class Application: IApplication{
-        private readonly ISettingsProvider settingsProvider;
-        private readonly IPlaylistProvider playlistProvider;
-        private readonly IEpgProvider epgProvider;
-        private readonly ICompression compression;
-        private readonly IPluginHandler pluginHandler;
-        private readonly ILogging logging;
+        private readonly ISettingsProvider _settingsProvider;
+        private readonly IPlaylistProvider _playlistProvider;
+        private readonly IEpgProvider _epgProvider;
+        private readonly ICompression _compression;
+        private readonly IPluginHandler _pluginHandler;
+        private readonly ILogging _logging;
 
         public Application(
             ISettingsProvider settingsProvider, 
@@ -27,31 +27,31 @@ namespace Couchpotato {
             IPluginHandler pluginHandler,
             ILogging logging
         ){
-            this.settingsProvider = settingsProvider;
-            this.playlistProvider = playlistProvider;
-            this.epgProvider = epgProvider;
-            this.compression = compression;
-            this.pluginHandler = pluginHandler;
-            this.logging = logging;
+            _playlistProvider = playlistProvider;
+            _settingsProvider = settingsProvider;
+            _epgProvider = epgProvider;
+            _compression = compression;
+            _pluginHandler = pluginHandler;
+            _logging = logging;
         }
 
         public void Run(string[] settingsPaths){
             
             if(settingsPaths == null || settingsPaths.Length == 0){
-                this.logging.Error($"No settings file(s) found. Please fix.");
+                _logging.Error($"No settings file(s) found. Please fix.");
                 
                 Environment.Exit(0);
             }
 
             var startTime = DateTime.Now;
             
-            this.pluginHandler.Register();
+            _pluginHandler.Register();
 
-            this.pluginHandler.Run(PluginType.ApplicationStart);
+            _pluginHandler.Run(PluginType.ApplicationStart);
             
             foreach(var path in settingsPaths){
                 if(string.IsNullOrEmpty(path) || !path.ToLower().Contains(".json")){
-                    this.logging.Error($"Settings parameter \"{path}\" isn't valid.");
+                    _logging.Error($"Settings parameter \"{path}\" isn't valid.");
                     
                     continue;
                 }
@@ -62,50 +62,50 @@ namespace Couchpotato {
             var endTime = DateTime.Now;
             var timeTaken = (endTime - startTime).TotalSeconds;
 
-            this.pluginHandler.Run(PluginType.ApplicationFinished);
+            _pluginHandler.Run(PluginType.ApplicationFinished);
             
-            this.logging.Print($"\nDone! It took {Math.Ceiling(timeTaken)} seconds.");
+            _logging.Print($"\nDone! It took {Math.Ceiling(timeTaken)} seconds.");
         }
 
         private void Create(string settingsPath){
-            var settings = settingsProvider.Load(settingsPath);
+            var settings = _settingsProvider.Load(settingsPath);
 
             if(settings == null){
-                this.logging.Info($"\nNeed settings. Please fix. Thanks.");
+                _logging.Info($"\nNeed settings. Please fix. Thanks.");
                 return;
             }
 
-            this.pluginHandler.Run(PluginType.BeforeChannel);
-            var channelResult = playlistProvider.GetPlaylist(settings.M3uPath, settings);
-            this.pluginHandler.Run(PluginType.AfterChannel, channelResult);
+            _pluginHandler.Run(PluginType.BeforeChannel);
+            var channelResult = _playlistProvider.GetPlaylist(settings.M3uPath, settings);
+            _pluginHandler.Run(PluginType.AfterChannel, channelResult);
 
             if(!channelResult.Channels.Any()){
-               this.logging.Info($"\nNo channels found so no reason to continue. Bye bye.");
+               _logging.Info($"\nNo channels found so no reason to continue. Bye bye.");
                 
                 Environment.Exit(0);
             }
 
-            this.pluginHandler.Run(PluginType.BeforeEpg, channelResult);
-            var epgFile = epgProvider.GetProgramGuide(settings.EpgPath, settings);
-            this.pluginHandler.Run(PluginType.AfterEpg, channelResult, epgFile);
+            _pluginHandler.Run(PluginType.BeforeEpg, channelResult);
+            var epgFile = _epgProvider.GetProgramGuide(settings.EpgPath, settings);
+            _pluginHandler.Run(PluginType.AfterEpg, channelResult, epgFile);
 
             var outputPath = settings.OutputPath ?? "./";
         
             if(!Directory.Exists(outputPath)){
-                this.logging.Info($"Couldn't find output folder, creating it at {outputPath}!");
+                _logging.Info($"Couldn't find output folder, creating it at {outputPath}!");
                 Directory.CreateDirectory(outputPath);
             }
 
             var outputM3uPath = Path.Combine(outputPath, "channels.m3u");
-            playlistProvider.Save(outputM3uPath, channelResult.Channels);
+            _playlistProvider.Save(outputM3uPath, channelResult.Channels);
 
             var outputEpgPath = Path.Combine(outputPath, "epg.xml");
-            epgProvider.Save(outputEpgPath, epgFile);
+            _epgProvider.Save(outputEpgPath, epgFile);
             
 
             if(settings.Compress){
-                compression.Compress(outputM3uPath);
-                compression.Compress(outputEpgPath);
+                _compression.Compress(outputM3uPath);
+                _compression.Compress(outputEpgPath);
             }
         }
     }

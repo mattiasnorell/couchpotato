@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Text;
 using Couchpotato.Business.Compression;
 using Couchpotato.Business.Logging;
 
@@ -8,15 +9,27 @@ namespace Couchpotato.Business.IO
 {
     public class FileHandler:IFileHandler
     {
-        private readonly ICompression compression;
-        private readonly ILogging logging;
+        private readonly ICompression _compression;
+        private readonly ILogging _logging;
 
         public FileHandler(
             ICompression compression, 
             ILogging logging
         ){
-            this.compression = compression;
-            this.logging = logging;
+            _compression = compression;
+            _logging = logging;
+        }
+
+        public void WriteFile(string path, string[] content){
+            using (System.IO.StreamWriter writeFile = new System.IO.StreamWriter(path, false, new UTF8Encoding(true)))
+            {
+                writeFile.WriteLine("#EXTM3U");
+
+                foreach (string row in content)
+                {
+                    writeFile.WriteLine(row);
+                }
+            }
         }
 
         private Stream DownloadFile(string path){
@@ -35,24 +48,24 @@ namespace Couchpotato.Business.IO
 
         public Stream GetSource(string path){
             if(path.StartsWith("http")){
-                this.logging.Print($"- Downloading file from {path}");
+                _logging.Print($"- Downloading file from {path}");
                 var file = DownloadFile(path);
 
                 if(path.EndsWith(".gz")){
-                    this.logging.Print($"- Decompressing file");
+                    _logging.Print($"- Decompressing file");
 
                     if(file == null){
-                        this.logging.Error($"  File is empty and/or corrupt. Can't decompress {path}");
+                        _logging.Error($"  File is empty and/or corrupt. Can't decompress {path}");
                         return null;
                     }
 
-                    return compression.Decompress(file);
+                    return _compression.Decompress(file);
                 }
 
                 return file;
                 
             }else{
-                this.logging.Print($"- Reading local file from {path}");
+                _logging.Print($"- Reading local file from {path}");
 
                 if(!File.Exists(path)){
                     return null;
@@ -61,8 +74,8 @@ namespace Couchpotato.Business.IO
                 var file = new FileStream(path, FileMode.Open);
 
                 if(path.EndsWith(".gz")){
-                    this.logging.Print($"- Decompressed file");
-                    return compression.Decompress(file);
+                    _logging.Print($"- Decompressed file");
+                    return _compression.Decompress(file);
                 }
 
                 return file;

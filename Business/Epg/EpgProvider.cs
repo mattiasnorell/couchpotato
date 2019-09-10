@@ -11,15 +11,15 @@ using Couchpotato.Business.IO;
 namespace Couchpotato.Business
 {
     public class EpgProvider: IEpgProvider{
-        private readonly IFileHandler fileHandler;
-        private readonly ILogging logging;
+        private readonly IFileHandler _fileHandler;
+        private readonly ILogging _logging;
 
         public EpgProvider(
             IFileHandler fileHandler,
             ILogging logging
         ){
-            this.fileHandler = fileHandler;
-            this.logging = logging;
+            _fileHandler = fileHandler;
+            _logging = logging;
         }
 
         public EpgList GetProgramGuide(string[] paths, UserSettings settings){
@@ -30,28 +30,29 @@ namespace Couchpotato.Business
         }
 
         public void Save(string path, EpgList epgList){
-            this.logging.Print($"Writing EPG-file to {path}"); 
+            _logging.Print($"Writing EPG-file to {path}"); 
             var writer =  new XmlSerializer(typeof(EpgList));  
             var file = System.IO.File.Create(path);  
 
             writer.Serialize(file, epgList);  
-            file.Close(); 
+            file.Close();
         }
         
         private EpgList Load(string[] paths){
-            this.logging.Print($"\nLoading EPG-files:");
+            _logging.Print($"\nLoading EPG-files:");
 
-            var epgList = new EpgList();
-            epgList.GeneratorInfoName = "";
-            epgList.GeneratorInfoUrl = "";
-            epgList.Channels = new List<EpgChannel>();
-            epgList.Programs = new List<EpgProgram>();
+            var epgList = new EpgList(){
+                GeneratorInfoName = "",
+                GeneratorInfoUrl = "",
+                Channels = new List<EpgChannel>(),
+                Programs = new List<EpgProgram>()
+            };
 
             foreach(var path in paths){
                 var epgFile = Parse(path);
 
                 if(epgFile == null){
-                    this.logging.Error($"- Couldn't download file {path}");
+                    _logging.Error($"- Couldn't download file {path}");
                     continue;
                 }
 
@@ -69,7 +70,7 @@ namespace Couchpotato.Business
             xRoot.IsNullable = true;
             XmlSerializer serializer = new XmlSerializer(typeof(EpgList), xRoot);
 
-            using(var stream = this.fileHandler.GetSource(path)){
+            using(var stream = _fileHandler.GetSource(path)){
                 if(stream == null){
                     return null;
                 }
@@ -77,7 +78,7 @@ namespace Couchpotato.Business
                 try{
                     return (EpgList)serializer.Deserialize(stream);          
                 }catch(Exception ex){
-                    this.logging.Error("Couldn't deserialize the EPG-list", ex);
+                    _logging.Error("Couldn't deserialize the EPG-list", ex);
                     return null;
                 }
             };
@@ -99,42 +100,44 @@ namespace Couchpotato.Business
                 var epgId = settingsChannel.EpgId ?? settingsChannel.ChannelId;
                 var channel = input.Channels.FirstOrDefault(e => e.Id == epgId);
 
-                this.logging.PrintSameLine("\rFiltering EPG-files: " + ((decimal)i / (decimal)channelCount).ToString("0%"));
+                _logging.PrintSameLine("\rFiltering EPG-files: " + ((decimal)i / (decimal)channelCount).ToString("0%"));
 
                 if(channel == null){
                     missingChannels.Add(settingsChannel);
                     continue;
                 }
 
-                var epgChannel = new EpgChannel();
-                epgChannel.Id = channel.Id;
-                epgChannel.DisplayName = settingsChannel.FriendlyName ?? channel.DisplayName;
-                epgChannel.Url = channel.Url;
+                var epgChannel = new EpgChannel(){
+                    Id = channel.Id,
+                    DisplayName = settingsChannel.FriendlyName ?? channel.DisplayName,
+                    Url = channel.Url
+                };
 
                 epgFile.Channels.Add(epgChannel);
 
                 foreach(var program in input.Programs.Where(e=> e.Channel == channel.Id)){
-                    var epgProgram = new EpgProgram();
-                    epgProgram.Channel = program.Channel;
-                    epgProgram.Desc = program.Desc;
-                    epgProgram.EpisodeNumber = program.EpisodeNumber;
-                    epgProgram.Lang = program.Lang;
-                    epgProgram.Start = string.IsNullOrEmpty(settingsChannel.EpgTimeshift) ? program.Start : AddTimeshift(program.Start, settingsChannel.EpgTimeshift);
-                    epgProgram.Stop =  string.IsNullOrEmpty(settingsChannel.EpgTimeshift) ? program.Stop : AddTimeshift(program.Stop, settingsChannel.EpgTimeshift);
-                    epgProgram.Title = program.Title;
+                    var epgProgram = new EpgProgram(){
+                        Channel = program.Channel,
+                        Desc = program.Desc,
+                        EpisodeNumber = program.EpisodeNumber,
+                        Lang = program.Lang,
+                        Start = string.IsNullOrEmpty(settingsChannel.EpgTimeshift) ? program.Start : AddTimeshift(program.Start, settingsChannel.EpgTimeshift),
+                        Stop =  string.IsNullOrEmpty(settingsChannel.EpgTimeshift) ? program.Stop : AddTimeshift(program.Stop, settingsChannel.EpgTimeshift),
+                        Title = program.Title
+                    };
 
                     epgFile.Programs.Add(epgProgram);
                 }
             }
 
-            this.logging.Print("\n"); //TODO: Remove this and make better
+            _logging.Print("\n"); //TODO: Remove this and make better
 
             if(missingChannels.Any()){
                 Console.ForegroundColor = ConsoleColor.Red;
-                this.logging.Warn($"Couldn't find EPG for:");
+                _logging.Warn($"Couldn't find EPG for:");
                 
                 foreach(var missingChannel in missingChannels){
-                    this.logging.Warn($"- { missingChannel.FriendlyName}");
+                    _logging.Warn($"- { missingChannel.FriendlyName}");
                 }
 
                 Console.ForegroundColor = ConsoleColor.White;
@@ -153,6 +156,5 @@ namespace Couchpotato.Business
             
             return time.Substring(0, time.Length - 5) + timeshift;
         }
-        
     }
 }

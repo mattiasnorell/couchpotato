@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
+using System.IO;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Validation;
 using CouchpotatoShared.Channel;
@@ -15,26 +14,26 @@ namespace Couchpotato.Business.Playlist
 {
     public class PlaylistProvider : IPlaylistProvider
     {
-        private readonly ISettingsProvider settingsProvider;
-        private readonly IFileHandler fileHandler;
-        private readonly IStreamValidator streamValidator;
-        private readonly ILogging logging;
-        private readonly IPlaylistParser playlistParser;
+        private readonly ISettingsProvider _settingsProvider;
+        private readonly IFileHandler _fileHandler;
+        private readonly IStreamValidator _streamValidator;
+        private readonly ILogging _logging;
+        private readonly IPlaylistParser _playlistParser;
 
         public PlaylistProvider(ISettingsProvider settingsProvider, IFileHandler fileHandler, IStreamValidator streamValidator, ILogging logging, IPlaylistParser playlistParser)
         {
-            this.settingsProvider = settingsProvider;
-            this.fileHandler = fileHandler;
-            this.streamValidator = streamValidator;
-            this.logging = logging;
-            this.playlistParser = playlistParser;
+            _settingsProvider = settingsProvider;
+            _fileHandler = fileHandler;
+            _streamValidator = streamValidator;
+            _logging = logging;
+            _playlistParser = playlistParser;
         }
 
         public ChannelResult GetPlaylist(string path, UserSettings settings)
         {
             var result = new ChannelResult();
             var playlistFile = Load(path);
-            var playlistItems = playlistParser.Parse(playlistFile);
+            var playlistItems = _playlistParser.Parse(playlistFile);
 
             var streams = new List<Channel>();
 
@@ -62,26 +61,27 @@ namespace Couchpotato.Business.Playlist
 
         private void ValidateStreams(List<Channel> streams, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
-            this.logging.Print("\nValidating streams. This might disconnect all active streams.");
-            var invalidStreams = this.streamValidator.ValidateStreams(streams);
+            _logging.Print("\nValidating streams. This might disconnect all active streams.");
+            var invalidStreams = _streamValidator.ValidateStreams(streams);
 
-            if (invalidStreams != null && invalidStreams.Count > 0)
+            if (invalidStreams == null || invalidStreams.Count == 0) {
+                return;
+            }
+
+            _logging.Info("\nBroken streams found, trying to find fallback channels");
+
+            foreach (var invalidStreamTvgName in invalidStreams)
             {
-                this.logging.Info("\nBroken streams found, trying to find fallback channels");
+                var fallbackStream = GetFallbackStream(invalidStreamTvgName, playlistItems, settings);
 
-                foreach (var invalidStreamTvgName in invalidStreams)
+                if (fallbackStream != null)
                 {
-                    var fallbackStream = GetFallbackStream(invalidStreamTvgName, playlistItems, settings);
-
-                    if (fallbackStream != null)
-                    {
-                        this.logging.Info($"- Fallback found for {invalidStreamTvgName}, now using {fallbackStream.TvgName}");
-                        streams.Add(fallbackStream);
-                    }
-                    else
-                    {
-                        this.logging.Warn($"- Sorry, no fallback found for {invalidStreamTvgName}");
-                    }
+                    _logging.Info($"- Fallback found for {invalidStreamTvgName}, now using {fallbackStream.TvgName}");
+                    streams.Add(fallbackStream);
+                }
+                else
+                {
+                    _logging.Warn($"- Sorry, no fallback found for {invalidStreamTvgName}");
                 }
             }
         }
@@ -128,7 +128,7 @@ namespace Couchpotato.Business.Playlist
                 }
 
                 var fallback = playlistItems[fallbackTvgName];
-                var isValid = this.streamValidator.ValidateStreamByUrl(fallback.Url);
+                var isValid = _streamValidator.ValidateStreamByUrl(fallback.Url);
                 if (!isValid)
                 {
                     continue;
@@ -144,42 +144,44 @@ namespace Couchpotato.Business.Playlist
         private Channel GetSpecificFallback(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
             var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
-            if (channelSetting != null && channelSetting.FallbackChannels != null)
-            {
-                foreach (var fallbackChannelId in channelSetting.FallbackChannels)
-                {
-
-                    if (!playlistItems.ContainsKey(fallbackChannelId))
-                    {
-                        continue;
-                    }
-                    
-                    var fallbackChannel = playlistItems[fallbackChannelId];
-                    if (fallbackChannel == null)
-                    {
-                        continue;
-                    }
-
-                    var isValid = this.streamValidator.ValidateStreamByUrl(fallbackChannel.Url);
-
-                    if (isValid)
-                    {
-                        return Map(fallbackChannel, channelSetting, settings);
-                    }
-
-                };
+            if (channelSetting == null || channelSetting.FallbackChannels == null){
+                return null;
             }
+            
+            foreach (var fallbackChannelId in channelSetting.FallbackChannels)
+            {
 
+                if (!playlistItems.ContainsKey(fallbackChannelId))
+                {
+                    continue;
+                }
+                
+                var fallbackChannel = playlistItems[fallbackChannelId];
+                if (fallbackChannel == null)
+                {
+                    continue;
+                }
+
+                var isValid = _streamValidator.ValidateStreamByUrl(fallbackChannel.Url);
+
+                if (isValid)
+                {
+                    return Map(fallbackChannel, channelSetting, settings);
+                }
+
+            };
+            
             return null;
         }
 
         private Channel Map(PlaylistItem playlistItem, UserSettingsChannel channelSetting, UserSettings settings)
         {
-            var channel = new Channel();
-            channel.TvgName = playlistItem.TvgName;
-            channel.TvgId = channelSetting.EpgId ?? playlistItem.TvgId;
-            channel.TvgLogo = playlistItem.TvgLogo;
-            channel.Url = playlistItem.Url;
+            var channel = new Channel(){
+                TvgName = playlistItem.TvgName,
+                TvgId = channelSetting.EpgId ?? playlistItem.TvgId,
+                TvgLogo = playlistItem.TvgLogo,
+                Url = playlistItem.Url
+            };
 
             if (!string.IsNullOrEmpty(channelSetting.CustomGroupName) || !string.IsNullOrEmpty(settings.DefaultChannelGroup))
             {
@@ -221,11 +223,11 @@ namespace Couchpotato.Business.Playlist
 
             if (brokenStreams.Any())
             {
-                this.logging.Warn($"\nCan't find some channels:");
+                _logging.Warn($"\nCan't find some channels:");
 
                 foreach (var brokenStream in brokenStreams)
                 {
-                    this.logging.Warn($"- {brokenStream }");
+                    _logging.Warn($"- {brokenStream }");
                 }
             }
 
@@ -248,18 +250,19 @@ namespace Couchpotato.Business.Playlist
 
                 foreach (var groupItem in groupItems)
                 {
-                    var stream = new Channel();
-                    stream.TvgName = groupItem.TvgName;
-                    stream.TvgId = groupItem.TvgId;
-                    stream.TvgLogo = groupItem.TvgLogo;
-                    stream.Url = groupItem.Url;
-                    stream.GroupTitle = group.FriendlyName ?? group.GroupId;
-                    stream.Order = settings.Channels.Count() + groupItems.IndexOf(groupItem);
-
                     if (group.Exclude != null && group.Exclude.Any(e => e == groupItem.TvgName))
                     {
                         continue;
                     }
+
+                    var stream = new Channel(){
+                        TvgName = groupItem.TvgName,
+                        TvgId = groupItem.TvgId,
+                        TvgLogo = groupItem.TvgLogo,
+                        Url = groupItem.Url,
+                        GroupTitle = group.FriendlyName ?? group.GroupId,
+                        Order = settings.Channels.Count() + groupItems.IndexOf(groupItem)
+                    };                    
 
                     streams.Add(stream);
                 }
@@ -270,12 +273,12 @@ namespace Couchpotato.Business.Playlist
 
         private string[] Load(string path)
         {
-            this.logging.Print("Loading channel list");
-            var result = this.fileHandler.GetSource(path);
+            _logging.Print("Loading channel list");
+            var result = _fileHandler.GetSource(path);
 
             if (result == null)
             {
-                this.logging.Error($"- Couldn't download file {path}");
+                _logging.Error($"- Couldn't download file {path}");
                 return new string[] { };
             }
 
@@ -295,19 +298,19 @@ namespace Couchpotato.Business.Playlist
 
         public void Save(string path, List<Channel> channels)
         {
-            this.logging.Print($"Writing M3U-file to {path}");
+            _logging.Print($"Writing M3U-file to {path}");
 
-            using (System.IO.StreamWriter writeFile = new System.IO.StreamWriter(path, false, new UTF8Encoding(true)))
+            var content = new List<string>();
+            content.Add("#EXTM3U");
+
+            foreach (Channel channel in channels.OrderBy(e => e.Order))
             {
-                writeFile.WriteLine("#EXTM3U");
-
-                foreach (Channel channel in channels.OrderBy(e => e.Order))
-                {
-                    var name = channel.FriendlyName ?? channel.TvgName;
-                    writeFile.WriteLine($"#EXTINF:-1 tvg-id=\"{channel.TvgId}\" tvg-name=\"{channel.TvgName}\" tvg-logo=\"{channel.TvgLogo}\" group-title=\"{channel.GroupTitle}\",{name}");
-                    writeFile.WriteLine(channel.Url);
-                }
+                var name = channel.FriendlyName ?? channel.TvgName;
+                content.Add($"#EXTINF:-1 tvg-id=\"{channel.TvgId}\" tvg-name=\"{channel.TvgName}\" tvg-logo=\"{channel.TvgLogo}\" group-title=\"{channel.GroupTitle}\",{name}");
+                content.Add(channel.Url);
             }
+
+            _fileHandler.WriteFile(path, content.ToArray());
         }
     }
 }
