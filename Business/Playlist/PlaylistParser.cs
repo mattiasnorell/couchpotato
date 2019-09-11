@@ -16,7 +16,7 @@ namespace Couchpotato.Business.Playlist
             _logging = logging;
         }
 
-       public Dictionary<string, PlaylistItem> Parse(string[] file)
+        public Dictionary<string, PlaylistItem> Parse(string[] file)
         {
             var streams = new Dictionary<string, PlaylistItem>();
             var numberOfLines = file.Length;
@@ -29,21 +29,22 @@ namespace Couchpotato.Business.Playlist
                 {
                     continue;
                 }
-                
-                var tvgName = GetValueForAttribute(item, "tvg-name");
-                if(streams.ContainsKey(tvgName)) continue;
 
-                var playlistItem = new PlaylistItem(){
+                var tvgName = GetValueForAttribute(item, "tvg-name");
+                if (streams.ContainsKey(tvgName)) continue;
+
+                var playlistItem = new PlaylistItem()
+                {
                     TvgName = tvgName,
                     GroupTitle = GetValueForAttribute(item, "group-title"),
                     TvgId = GetValueForAttribute(item, "tvg-id"),
                     TvgLogo = GetValueForAttribute(item, "tvg-logo"),
                     Url = file[i + 1]
                 };
-            
+
                 streams.Add(tvgName, playlistItem);
-                
-                _logging.PrintSameLine($"Crunching playlist data: {((decimal)i / (decimal)numberOfLines).ToString("0%")}");
+
+                _logging.Progress($"Crunching playlist data", i, numberOfLines);
             }
 
             return streams;

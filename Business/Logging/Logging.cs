@@ -37,5 +37,13 @@ namespace Couchpotato.Business.Logging {
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine(message);    
         }
+
+        public void Progress(string message, int index, int max){
+            PrintSameLine($"{message}: {((decimal)index / (decimal)max).ToString("0%")}");
+
+            if(index >= max){
+                Console.WriteLine("\n");
+            }
+        }
     }
 }

@@ -33,7 +33,8 @@ namespace Couchpotato.Business.Validation{
                 }
 
                 i++;
-                _logging.PrintSameLine($"- Progress: {((decimal)i / (decimal)streamCount).ToString("0%")}");
+
+                _logging.Progress("- Progress", i, streamCount);
             }
 
             return invalidStreams;

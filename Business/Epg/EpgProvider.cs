@@ -95,7 +95,7 @@ namespace Couchpotato.Business
                 var epgId = settingsChannel.EpgId ?? settingsChannel.ChannelId;
                 var channel = input.Channels.FirstOrDefault(e => e.Id == epgId);
 
-                _logging.PrintSameLine("\rFiltering EPG-files: " + ((decimal)i / (decimal)channelCount).ToString("0%"));
+                _logging.Progress($"Filtering EPG-files", i, channelCount);
 
                 if(channel == null){
                     missingChannels.Add(settingsChannel);
@@ -124,8 +124,6 @@ namespace Couchpotato.Business
                     epgFile.Programs.Add(epgProgram);
                 }
             }
-
-            _logging.Print("\n"); //TODO: Remove this and make better
 
             if(missingChannels.Any()){
                 Console.ForegroundColor = ConsoleColor.Red;
