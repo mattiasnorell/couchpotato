@@ -128,12 +128,13 @@ Couchpotatos real job is to read and write m3u and epg-files. That's it. No more
 
 Create a class, either in the Couchpotato project or as a new project, and have it implement the IPlugin-interface. Now Couchpotato will discover it. Then add the CouchpotatoPlugin-attribute and set when you want the plugin to run. Avaliable 
 
-
 | Lifecycle event | Description | 
 | :------------- | :------------- |
 | ApplicationStart | Once the application is finished bootstrapping this is the first thing that will run. |
 | BeforeChannel | Will run before all M3U-files are loaded and parsed. Good place to run custom channel stuff. |
+| AfterChannel | Will run after all M3U-files are loaded and parsed. Good place to run custom channel modification stuff. |
 | BeforeEpg | Will run before all EPG-files are loaded and parsed. Good place to run custom EPG stuff. |
+| AfterEpg | Will run after all EPG-files are loaded and parsed. Good place to run custom epg modification stuff. |
 | ApplicationFinished | The last thing that will happen before the application exits. Good place to remove temp-files etc. |
 
 #### Boilerplate
