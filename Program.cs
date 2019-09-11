@@ -17,7 +17,7 @@ namespace Couchpotato
 
             var config = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
             .Build();
             
             var builder = new ContainerBuilder();
