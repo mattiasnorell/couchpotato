@@ -29,13 +29,8 @@ namespace Couchpotato.Business
             return filteredEpgList;
         }
 
-        public void Save(string path, EpgList epgList){
-            _logging.Print($"Writing EPG-file to {path}"); 
-            var writer =  new XmlSerializer(typeof(EpgList));  
-            var file = System.IO.File.Create(path);  
-
-            writer.Serialize(file, epgList);  
-            file.Close();
+        public string Save(string path, string fileName, EpgList epgList){
+            return _fileHandler.WriteXmlFile<EpgList>(path, fileName, epgList);
         }
         
         private EpgList Load(string[] paths){

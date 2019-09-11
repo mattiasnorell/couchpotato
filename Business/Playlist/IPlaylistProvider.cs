@@ -5,6 +5,6 @@ using CouchpotatoShared.Channel;
 namespace Couchpotato.Business.Playlist{
     public interface IPlaylistProvider{
         ChannelResult GetPlaylist(string path, UserSettings settings);
-        void Save(string path, List<Channel> channels);
+        string Save(string path, string fileName, List<Channel> channels);
     }
 }

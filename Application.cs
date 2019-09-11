@@ -1,6 +1,5 @@
 
 using System;
-using System.IO;
 using System.Linq;
 using Couchpotato.Business;
 using Couchpotato.Business.Playlist;
@@ -9,6 +8,7 @@ using Couchpotato.Business.Logging;
 using Couchpotato.Business.Plugins;
 using CouchpotatoShared.Plugins;
 using Couchpotato.Business.Settings;
+using Couchpotato.Business.IO;
 
 namespace Couchpotato {
     class Application: IApplication{
@@ -18,6 +18,7 @@ namespace Couchpotato {
         private readonly ICompression _compression;
         private readonly IPluginHandler _pluginHandler;
         private readonly ILogging _logging;
+        private readonly IFileHandler _fileHandler;
 
         public Application(
             ISettingsProvider settingsProvider, 
@@ -25,7 +26,8 @@ namespace Couchpotato {
             IEpgProvider epgProvider, 
             ICompression compression,
             IPluginHandler pluginHandler,
-            ILogging logging
+            ILogging logging,
+            IFileHandler fileHandler
         ){
             _playlistProvider = playlistProvider;
             _settingsProvider = settingsProvider;
@@ -33,6 +35,7 @@ namespace Couchpotato {
             _compression = compression;
             _pluginHandler = pluginHandler;
             _logging = logging;
+            _fileHandler = fileHandler;
         }
 
         public void Run(string[] settingsPaths){
@@ -82,7 +85,7 @@ namespace Couchpotato {
             if(!channelResult.Channels.Any()){
                _logging.Info($"\nNo channels found so no reason to continue. Bye bye.");
                 
-                Environment.Exit(0);
+                return;
             }
 
             _pluginHandler.Run(PluginType.BeforeEpg, channelResult);
@@ -90,17 +93,15 @@ namespace Couchpotato {
             _pluginHandler.Run(PluginType.AfterEpg, channelResult, epgFile);
 
             var outputPath = settings.OutputPath ?? "./";
-        
-            if(!Directory.Exists(outputPath)){
-                _logging.Info($"Couldn't find output folder, creating it at {outputPath}!");
-                Directory.CreateDirectory(outputPath);
+            var folderExist = _fileHandler.CheckIfFolderExist(outputPath, true);
+
+            if(!folderExist){
+                _logging.Info($"\nNo output folder found. Can't continue.");
+                return;
             }
 
-            var outputM3uPath = Path.Combine(outputPath, "channels.m3u");
-            _playlistProvider.Save(outputM3uPath, channelResult.Channels);
-
-            var outputEpgPath = Path.Combine(outputPath, "epg.xml");
-            _epgProvider.Save(outputEpgPath, epgFile);
+            var outputM3uPath = _playlistProvider.Save(outputPath, "channels.m3u", channelResult.Channels);
+            var outputEpgPath = _epgProvider.Save(outputPath, "epg.xml", epgFile);
             
 
             if(settings.Compress){

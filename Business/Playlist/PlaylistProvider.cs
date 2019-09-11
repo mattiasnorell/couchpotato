@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Validation;
 using CouchpotatoShared.Channel;
@@ -9,6 +8,7 @@ using Couchpotato.Business.Playlist.Models;
 using Couchpotato.Business.Settings.Models;
 using Couchpotato.Business.IO;
 using Couchpotato.Business.Settings;
+using System.IO;
 
 namespace Couchpotato.Business.Playlist
 {
@@ -20,7 +20,12 @@ namespace Couchpotato.Business.Playlist
         private readonly ILogging _logging;
         private readonly IPlaylistParser _playlistParser;
 
-        public PlaylistProvider(ISettingsProvider settingsProvider, IFileHandler fileHandler, IStreamValidator streamValidator, ILogging logging, IPlaylistParser playlistParser)
+        public PlaylistProvider(
+            ISettingsProvider settingsProvider,
+            IFileHandler fileHandler,
+            IStreamValidator streamValidator,
+            ILogging logging, 
+            IPlaylistParser playlistParser)
         {
             _settingsProvider = settingsProvider;
             _fileHandler = fileHandler;
@@ -64,7 +69,8 @@ namespace Couchpotato.Business.Playlist
             _logging.Print("\nValidating streams. This might disconnect all active streams.");
             var invalidStreams = _streamValidator.ValidateStreams(streams);
 
-            if (invalidStreams == null || invalidStreams.Count == 0) {
+            if (invalidStreams == null || invalidStreams.Count == 0)
+            {
                 return;
             }
 
@@ -144,10 +150,11 @@ namespace Couchpotato.Business.Playlist
         private Channel GetSpecificFallback(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
             var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
-            if (channelSetting == null || channelSetting.FallbackChannels == null){
+            if (channelSetting == null || channelSetting.FallbackChannels == null)
+            {
                 return null;
             }
-            
+
             foreach (var fallbackChannelId in channelSetting.FallbackChannels)
             {
 
@@ -155,7 +162,7 @@ namespace Couchpotato.Business.Playlist
                 {
                     continue;
                 }
-                
+
                 var fallbackChannel = playlistItems[fallbackChannelId];
                 if (fallbackChannel == null)
                 {
@@ -170,13 +177,14 @@ namespace Couchpotato.Business.Playlist
                 }
 
             };
-            
+
             return null;
         }
 
         private Channel Map(PlaylistItem playlistItem, UserSettingsChannel channelSetting, UserSettings settings)
         {
-            var channel = new Channel(){
+            var channel = new Channel()
+            {
                 TvgName = playlistItem.TvgName,
                 TvgId = channelSetting.EpgId ?? playlistItem.TvgId,
                 TvgLogo = playlistItem.TvgLogo,
@@ -255,14 +263,15 @@ namespace Couchpotato.Business.Playlist
                         continue;
                     }
 
-                    var stream = new Channel(){
+                    var stream = new Channel()
+                    {
                         TvgName = groupItem.TvgName,
                         TvgId = groupItem.TvgId,
                         TvgLogo = groupItem.TvgLogo,
                         Url = groupItem.Url,
                         GroupTitle = group.FriendlyName ?? group.GroupId,
                         Order = settings.Channels.Count() + groupItems.IndexOf(groupItem)
-                    };                    
+                    };
 
                     streams.Add(stream);
                 }
@@ -296,7 +305,7 @@ namespace Couchpotato.Business.Playlist
             }
         }
 
-        public void Save(string path, List<Channel> channels)
+        public string Save(string path, string fileName, List<Channel> channels)
         {
             _logging.Print($"Writing M3U-file to {path}");
 
@@ -310,7 +319,7 @@ namespace Couchpotato.Business.Playlist
                 content.Add(channel.Url);
             }
 
-            _fileHandler.WriteFile(path, content.ToArray());
+            return _fileHandler.WriteTextFile(path, fileName, content.ToArray());
         }
     }
 }
