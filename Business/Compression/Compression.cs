@@ -48,6 +48,5 @@ namespace Couchpotato.Business.Compression{
                 return null;
             }
         }
-        
     }
 }

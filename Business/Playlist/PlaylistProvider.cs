@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Validation;
-using CouchpotatoShared.Channel;
+using Couchpotato.Core.Playlist;
 using Couchpotato.Business.Playlist.Models;
 using Couchpotato.Business.Settings.Models;
 using Couchpotato.Business.IO;
@@ -34,37 +34,33 @@ namespace Couchpotato.Business.Playlist
             _playlistParser = playlistParser;
         }
 
-        public ChannelResult GetPlaylist(string path, UserSettings settings)
+        public List<PlaylistItem> GetPlaylist(string path, UserSettings settings)
         {
-            var result = new ChannelResult();
             var playlistFile = Load(path);
-            var playlistItems = _playlistParser.Parse(playlistFile);
-
-            var streams = new List<Channel>();
+            var playlistParsed = _playlistParser.Parse(playlistFile);
+            var playlistItems = new List<PlaylistItem>();
 
             if (settings.Channels.Any())
             {
-                var items = GetSelectedChannels(playlistItems, settings);
-                streams.AddRange(items);
+                var items = GetSelectedChannels(playlistParsed, settings);
+                playlistItems.AddRange(items);
             }
 
             if (settings.Groups.Any())
             {
-                var groupItems = GetSelectedGroups(playlistItems, settings);
-                streams.AddRange(groupItems);
+                var groupItems = GetSelectedGroups(playlistParsed, settings);
+                playlistItems.AddRange(groupItems);
             }
 
             if (settings.ValidateStreams)
             {
-                ValidateStreams(streams, playlistItems, settings);
+                ValidateStreams(playlistItems, playlistParsed, settings);
             }
 
-            result.Channels = streams;
-
-            return result;
+            return playlistItems;
         }
 
-        private void ValidateStreams(List<Channel> streams, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
+        private void ValidateStreams(List<PlaylistItem> streams, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
             _logging.Print("\nValidating streams. This might disconnect all active streams.");
             var invalidStreams = _streamValidator.ValidateStreams(streams);
@@ -92,7 +88,7 @@ namespace Couchpotato.Business.Playlist
             }
         }
 
-        private Channel GetFallbackStream(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
+        private PlaylistItem GetFallbackStream(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
             var specificFallback = GetSpecificFallback(tvgName, playlistItems, settings);
             if (specificFallback != null)
@@ -109,7 +105,7 @@ namespace Couchpotato.Business.Playlist
             return null;
         }
 
-        private Channel GetDefaultFallback(string originalTvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
+        private PlaylistItem GetDefaultFallback(string originalTvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
 
             if (settings.DefaultChannelFallbacks == null)
@@ -147,7 +143,7 @@ namespace Couchpotato.Business.Playlist
             return null;
         }
 
-        private Channel GetSpecificFallback(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
+        private PlaylistItem GetSpecificFallback(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
             var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
             if (channelSetting == null || channelSetting.FallbackChannels == null)
@@ -181,9 +177,9 @@ namespace Couchpotato.Business.Playlist
             return null;
         }
 
-        private Channel Map(PlaylistItem playlistItem, UserSettingsChannel channelSetting, UserSettings settings)
+        private PlaylistItem Map(PlaylistItem playlistItem, UserSettingsChannel channelSetting, UserSettings settings)
         {
-            var channel = new Channel()
+            var channel = new PlaylistItem()
             {
                 TvgName = playlistItem.TvgName,
                 TvgId = channelSetting.EpgId ?? playlistItem.TvgId,
@@ -210,9 +206,9 @@ namespace Couchpotato.Business.Playlist
             return channel;
         }
 
-        private List<Channel> GetSelectedChannels(Dictionary<string, PlaylistItem> channels, UserSettings settings)
+        private List<PlaylistItem> GetSelectedChannels(Dictionary<string, PlaylistItem> channels, UserSettings settings)
         {
-            var streams = new List<Channel>();
+            var streams = new List<PlaylistItem>();
             var brokenStreams = new List<String>();
 
             foreach (var channel in settings.Channels)
@@ -243,9 +239,9 @@ namespace Couchpotato.Business.Playlist
         }
 
 
-        private List<Channel> GetSelectedGroups(Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
+        private List<PlaylistItem> GetSelectedGroups(Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
-            var streams = new List<Channel>();
+            var streams = new List<PlaylistItem>();
 
             foreach (var group in settings.Groups)
             {
@@ -263,7 +259,7 @@ namespace Couchpotato.Business.Playlist
                         continue;
                     }
 
-                    var stream = new Channel()
+                    var stream = new PlaylistItem()
                     {
                         TvgName = groupItem.TvgName,
                         TvgId = groupItem.TvgId,
@@ -305,14 +301,14 @@ namespace Couchpotato.Business.Playlist
             }
         }
 
-        public string Save(string path, string fileName, List<Channel> channels)
+        public string Save(string path, string fileName, List<PlaylistItem> channels)
         {
             _logging.Print($"Writing M3U-file to {path}");
 
             var content = new List<string>();
             content.Add("#EXTM3U");
 
-            foreach (Channel channel in channels.OrderBy(e => e.Order))
+            foreach (var channel in channels.OrderBy(e => e.Order))
             {
                 var name = channel.FriendlyName ?? channel.TvgName;
                 content.Add($"#EXTINF:-1 tvg-id=\"{channel.TvgId}\" tvg-name=\"{channel.TvgName}\" tvg-logo=\"{channel.TvgLogo}\" group-title=\"{channel.GroupTitle}\",{name}");

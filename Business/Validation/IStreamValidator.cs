@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using CouchpotatoShared.Channel;
+using Couchpotato.Core.Playlist;
 
 namespace Couchpotato.Business.Validation{
     public interface IStreamValidator{
         bool ValidateStreamByUrl(string url);
-        bool ValidateSingleStream(Channel stream);
-        List<string> ValidateStreams(List<Channel> streams);
+        bool ValidateSingleStream(PlaylistItem stream);
+        List<string> ValidateStreams(List<PlaylistItem> streams);
     }
 }

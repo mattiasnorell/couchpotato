@@ -2,18 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using CouchpotatoShared.Plugins;
+using Couchpotato.Core.Plugins;
 using Couchpotato.Business.Logging;
 using Microsoft.Extensions.Configuration;
-using CouchpotatoShared.Channel;
-using CouchpotatoShared.Epg;
+using Couchpotato.Core.Playlist;
+using Couchpotato.Core.Epg;
 
 namespace Couchpotato.Business.Plugins
 {
     public class PluginHandler : IPluginHandler
     {
-        private string pluginPath = $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}/plugins";
-        private Dictionary<PluginType, List<IPlugin>> registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
+        private string _pluginPath = $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}/plugins";
+        private Dictionary<PluginType, List<IPlugin>> _registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
         private readonly ILogging _logging;
         private readonly IConfiguration _configuration;
 
@@ -26,21 +26,21 @@ namespace Couchpotato.Business.Plugins
 
             var pluginPathSettings = _configuration.GetSection($"pluginPath")?.Value;
             if(!string.IsNullOrEmpty(pluginPathSettings)){
-                this.pluginPath = pluginPathSettings;
+                _pluginPath = pluginPathSettings;
             }
         }
 
-        public void Run(PluginType pluginType, ChannelResult streams = null, EpgList programGuide = null) {
-            if(!this.registeredPlugins.ContainsKey(pluginType)){
+        public void Run(PluginType pluginType, List<PlaylistItem> playlistItems = null, EpgList programGuide = null) {
+            if(!_registeredPlugins.ContainsKey(pluginType)){
                 return;
             }
 
             _logging.Info($"\nRunning {pluginType}-plugins:");
             
-            foreach(var plugin in this.registeredPlugins[pluginType]){
+            foreach(var plugin in _registeredPlugins[pluginType]){
                 try{
                     _logging.Info($"- {plugin.GetType().Name}");
-                    plugin.Run(streams, programGuide);
+                    plugin.Run(playlistItems, programGuide);
                 }catch (Exception e)
                 {
                     _logging.Error($"Error running plugin {plugin.GetType().Name}", e);
@@ -54,13 +54,13 @@ namespace Couchpotato.Business.Plugins
             var pluginType = typeof(IPlugin);
             var pluginTypes = new List<Type>();
             
-            if(!Directory.Exists(pluginPath)){
+            if(!Directory.Exists(_pluginPath)){
                 _logging.Warn("Plugin folder not found");
                 
                 return;
             }
 
-            var plugins = Directory.GetFiles(pluginPath, "*.dll");
+            var plugins = Directory.GetFiles(_pluginPath, "*.dll");
 
             foreach(var plugin in plugins){
                 var assembly = Assembly.LoadFrom(plugin);
@@ -101,17 +101,16 @@ namespace Couchpotato.Business.Plugins
 
                 var plugin = (IPlugin)Activator.CreateInstance(type, settings);
 
-                if(!this.registeredPlugins.ContainsKey(attribute.EventName)){
-                    this.registeredPlugins[attribute.EventName] = new List<IPlugin>();
+                if(!_registeredPlugins.ContainsKey(attribute.EventName)){
+                    _registeredPlugins[attribute.EventName] = new List<IPlugin>();
                 }
 
-                registeredPlugins[attribute.EventName].Add(plugin);
+                _registeredPlugins[attribute.EventName].Add(plugin);
 
                 _logging.Info($"PluginHandler :: Loaded {type.Name}");
             }
         }
         
-
         private Dictionary<string, object> GetSettings(string key){
             var pluginSettingsValues = _configuration.GetSection($"plugins:{key}")?.GetChildren();
             var pluginSettings = new Dictionary<string, object>();

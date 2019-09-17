@@ -6,7 +6,7 @@ using Couchpotato.Business.Playlist;
 using Couchpotato.Business.Compression;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Plugins;
-using CouchpotatoShared.Plugins;
+using Couchpotato.Core.Plugins;
 using Couchpotato.Business.Settings;
 using Couchpotato.Business.IO;
 
@@ -82,7 +82,7 @@ namespace Couchpotato {
             var channelResult = _playlistProvider.GetPlaylist(settings.M3uPath, settings);
             _pluginHandler.Run(PluginType.AfterChannel, channelResult);
 
-            if(!channelResult.Channels.Any()){
+            if(!channelResult.Any()){
                _logging.Info($"\nNo channels found so no reason to continue. Bye bye.");
                 
                 return;
@@ -100,7 +100,7 @@ namespace Couchpotato {
                 return;
             }
 
-            var outputM3uPath = _playlistProvider.Save(outputPath, "channels.m3u", channelResult.Channels);
+            var outputM3uPath = _playlistProvider.Save(outputPath, "channels.m3u", channelResult);
             var outputEpgPath = _epgProvider.Save(outputPath, "epg.xml", epgFile);
             
 

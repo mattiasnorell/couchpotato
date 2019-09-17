@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 using Couchpotato.Business.Logging;
-using CouchpotatoShared.Epg;
+using Couchpotato.Core.Epg;
 using Couchpotato.Business.Settings.Models;
 using Couchpotato.Business.IO;
 
@@ -23,8 +23,8 @@ namespace Couchpotato.Business
         }
 
         public EpgList GetProgramGuide(string[] paths, UserSettings settings){
-            var loadedEpgLists = this.Load(paths);
-            var filteredEpgList = this.Filter(loadedEpgLists, settings);
+            var loadedEpgLists = Load(paths);
+            var filteredEpgList = Filter(loadedEpgLists, settings.Channels);
 
             return filteredEpgList;
         }
@@ -60,18 +60,20 @@ namespace Couchpotato.Business
 
         private EpgList Parse(string path)
         {
-            XmlRootAttribute xRoot = new XmlRootAttribute();
-            xRoot.ElementName = "tv";
-            xRoot.IsNullable = true;
-            XmlSerializer serializer = new XmlSerializer(typeof(EpgList), xRoot);
-
             using(var stream = _fileHandler.GetSource(path)){
                 if(stream == null){
                     return null;
                 }
 
                 try{
-                    return (EpgList)serializer.Deserialize(stream);          
+                    var xRoot = new XmlRootAttribute(){
+                        ElementName = "tv",
+                        IsNullable = true
+                    };
+
+                    var serializer = new XmlSerializer(typeof(EpgList), xRoot);
+
+                    return serializer.Deserialize(stream) as EpgList;          
                 }catch(Exception ex){
                     _logging.Error("Couldn't deserialize the EPG-list", ex);
                     return null;
@@ -79,23 +81,24 @@ namespace Couchpotato.Business
             };
         }
 
-        private EpgList Filter(EpgList input, UserSettings settings){
-            var epgFile = new EpgList();
-            epgFile.GeneratorInfoName = "Couchpotato";
-            epgFile.Channels = new List<EpgChannel>();
-            epgFile.Programs = new List<EpgProgram>();
-
-            var channelCount = settings.Channels.Count;
+        private EpgList Filter(EpgList input, List<UserSettingsChannel> channels){
             var i = 0;
+            var channelCount = channels.Count;
+            var epgFile = new EpgList(){
+                GeneratorInfoName = "",
+                GeneratorInfoUrl = "",
+                Channels = new List<EpgChannel>(),
+                Programs = new List<EpgProgram>()
+            };
 
             var missingChannels = new List<UserSettingsChannel>();
 
-            foreach(var settingsChannel in settings.Channels){
+            foreach(var settingsChannel in channels){
                 i = i + 1;
+                _logging.Progress($"Filtering EPG-files", i, channelCount);
+                
                 var epgId = settingsChannel.EpgId ?? settingsChannel.ChannelId;
                 var channel = input.Channels.FirstOrDefault(e => e.Id == epgId);
-
-                _logging.Progress($"Filtering EPG-files", i, channelCount);
 
                 if(channel == null){
                     missingChannels.Add(settingsChannel);
@@ -126,14 +129,11 @@ namespace Couchpotato.Business
             }
 
             if(missingChannels.Any()){
-                Console.ForegroundColor = ConsoleColor.Red;
                 _logging.Warn($"Couldn't find EPG for:");
                 
                 foreach(var missingChannel in missingChannels){
                     _logging.Warn($"- { missingChannel.FriendlyName}");
                 }
-
-                Console.ForegroundColor = ConsoleColor.White;
             }
 
             return epgFile;

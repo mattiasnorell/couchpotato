@@ -24,21 +24,26 @@ namespace Couchpotato.Business.Logging {
             if(exception != null){
                 Console.WriteLine($"Exception: \n{exception}");
             }
+            
+            Console.ForegroundColor = ConsoleColor.White;
         }
 
         public void Info(string message)
         {
             Console.ForegroundColor = ConsoleColor.Gray;
-            Console.WriteLine(message);    
+            Console.WriteLine(message);
+            Console.ForegroundColor = ConsoleColor.White;
         }
 
         public void Warn(string message)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine(message);    
+            Console.WriteLine(message);
+            Console.ForegroundColor = ConsoleColor.White;
         }
 
         public void Progress(string message, int index, int max){
+            Console.ForegroundColor = ConsoleColor.White;
             PrintSameLine($"{message}: {((decimal)index / (decimal)max).ToString("0%")}");
 
             if(index >= max){

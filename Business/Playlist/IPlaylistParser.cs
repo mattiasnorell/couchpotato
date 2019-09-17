@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Couchpotato.Business.Playlist.Models;
+using Couchpotato.Core.Playlist;
 
 namespace Couchpotato.Business.Playlist
 {

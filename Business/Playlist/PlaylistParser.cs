@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Couchpotato.Business.Logging;
-using Couchpotato.Business.Playlist.Models;
+using Couchpotato.Core.Playlist;
 
 namespace Couchpotato.Business.Playlist
 {

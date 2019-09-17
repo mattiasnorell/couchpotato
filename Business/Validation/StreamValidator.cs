@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Couchpotato.Business.Logging;
-using CouchpotatoShared.Channel;
+using Couchpotato.Core.Playlist;
 
 namespace Couchpotato.Business.Validation{
     public class StreamValidator:IStreamValidator{
@@ -17,11 +17,11 @@ namespace Couchpotato.Business.Validation{
             return CheckAvailability(url);
         }
 
-        public bool ValidateSingleStream(Channel stream){
+        public bool ValidateSingleStream(PlaylistItem stream){
             return CheckAvailability(stream.Url);
         }
 
-        public List<String> ValidateStreams(List<Channel> streams){
+        public List<String> ValidateStreams(List<PlaylistItem> streams){
             var streamCount = streams.Count();
             var i = 0;
             var invalidStreams = new List<string>();

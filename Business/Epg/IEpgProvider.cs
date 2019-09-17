@@ -1,5 +1,5 @@
 ﻿using Couchpotato.Business.Settings.Models;
-using CouchpotatoShared.Epg;
+using Couchpotato.Core.Epg;
 
 namespace Couchpotato.Business{
     public interface IEpgProvider{
