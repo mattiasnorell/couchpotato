@@ -42,13 +42,17 @@ namespace Couchpotato.Business.Validation{
 
         private bool CheckAvailability(string url){
             var request  = (HttpWebRequest)WebRequest.Create(url);
-            request.Method = "GET";
-            const int maxBytes = 512;
-            request.AddRange(0, maxBytes-1);
+            request.Method = "HEAD";
 
             try{
-                using(WebResponse response = request.GetResponse()){
+                using(var response = (WebResponse)request.GetResponse()){
+
+                    if(response.ContentType != "video/mp2t"){
+                        return false;
+                    }
+
                     request.Abort();
+                    
                     return true;
                 }
             }catch(Exception){

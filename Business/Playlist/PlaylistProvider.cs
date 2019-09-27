@@ -122,7 +122,7 @@ namespace Couchpotato.Business.Playlist
 
             foreach (var tvgName in tvgNames.Value)
             {
-                var fallbackTvgName = tvgName.Replace(tvgNames.Key, tvgName);
+                var fallbackTvgName = originalTvgName.Replace(tvgNames.Key, tvgName);
 
                 if (!playlistItems.ContainsKey(fallbackTvgName))
                 {
@@ -136,7 +136,7 @@ namespace Couchpotato.Business.Playlist
                     continue;
                 }
 
-                var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
+                var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == originalTvgName);
                 return Map(fallback, channelSetting, settings);
             };
 
