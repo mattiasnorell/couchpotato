@@ -11,6 +11,8 @@ namespace Couchpotato.Business.Settings
         private readonly IFileHandler _fileHandler;
         private readonly ILogging _logging;
 
+        private UserSettings _settings = null;
+
         public SettingsProvider(
             IFileHandler fileHandler,
             ILogging logging
@@ -33,8 +35,15 @@ namespace Couchpotato.Business.Settings
             using (StreamReader responseReader = new StreamReader(file))
             {
                 var response = responseReader.ReadToEnd();
-                return JsonConvert.DeserializeObject<UserSettings>(response);
+                _settings = JsonConvert.DeserializeObject<UserSettings>(response);
+
+                return _settings;
             }
+        }
+
+        public UserSettings Get(){
+            // Ok, I know this isn't optimal but it works for now
+            return _settings;
         }
     }
 }

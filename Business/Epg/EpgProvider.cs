@@ -24,7 +24,7 @@ namespace Couchpotato.Business
 
         public EpgList GetProgramGuide(string[] paths, UserSettings settings){
             var loadedEpgLists = Load(paths);
-            var filteredEpgList = Filter(loadedEpgLists, settings.Channels);
+            var filteredEpgList = Filter(loadedEpgLists, settings.Streams);
 
             return filteredEpgList;
         }
@@ -81,7 +81,7 @@ namespace Couchpotato.Business
             };
         }
 
-        private EpgList Filter(EpgList input, List<UserSettingsChannel> channels){
+        private EpgList Filter(EpgList input, List<UserSettingsStream> channels){
             var i = 0;
             var channelCount = channels.Count;
             var epgFile = new EpgList(){
@@ -91,7 +91,7 @@ namespace Couchpotato.Business
                 Programs = new List<EpgProgram>()
             };
 
-            var missingChannels = new List<UserSettingsChannel>();
+            var missingChannels = new List<UserSettingsStream>();
 
             foreach(var settingsChannel in channels){
                 i = i + 1;

@@ -14,20 +14,17 @@ namespace Couchpotato.Business.Playlist
 {
     public class PlaylistProvider : IPlaylistProvider
     {
-        private readonly ISettingsProvider _settingsProvider;
         private readonly IFileHandler _fileHandler;
         private readonly IStreamValidator _streamValidator;
         private readonly ILogging _logging;
         private readonly IPlaylistParser _playlistParser;
 
         public PlaylistProvider(
-            ISettingsProvider settingsProvider,
             IFileHandler fileHandler,
             IStreamValidator streamValidator,
             ILogging logging, 
             IPlaylistParser playlistParser)
         {
-            _settingsProvider = settingsProvider;
             _fileHandler = fileHandler;
             _streamValidator = streamValidator;
             _logging = logging;
@@ -40,7 +37,7 @@ namespace Couchpotato.Business.Playlist
             var playlistParsed = _playlistParser.Parse(playlistFile);
             var playlistItems = new List<PlaylistItem>();
 
-            if (settings.Channels.Any())
+            if (settings.Streams.Any())
             {
                 var items = GetSelectedChannels(playlistParsed, settings);
                 playlistItems.AddRange(items);
@@ -52,7 +49,7 @@ namespace Couchpotato.Business.Playlist
                 playlistItems.AddRange(groupItems);
             }
 
-            if (settings.ValidateStreams)
+            if (settings.Validation.Enabled)
             {
                 ValidateStreams(playlistItems, playlistParsed, settings);
             }
@@ -108,12 +105,12 @@ namespace Couchpotato.Business.Playlist
         private PlaylistItem GetDefaultFallback(string originalTvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
 
-            if (settings.DefaultChannelFallbacks == null)
+            if (settings.DefaultStreamFallbacks == null)
             {
                 return null;
             }
 
-            var tvgNames = settings.DefaultChannelFallbacks.FirstOrDefault(e => originalTvgName.Contains(e.Key));
+            var tvgNames = settings.DefaultStreamFallbacks.FirstOrDefault(e => originalTvgName.Contains(e.Key));
 
             if (tvgNames == null || tvgNames.Value == null)
             {
@@ -136,7 +133,7 @@ namespace Couchpotato.Business.Playlist
                     continue;
                 }
 
-                var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == originalTvgName);
+                var channelSetting = settings.Streams.FirstOrDefault(e => e.ChannelId == originalTvgName);
                 return Map(fallback, channelSetting, settings);
             };
 
@@ -145,13 +142,13 @@ namespace Couchpotato.Business.Playlist
 
         private PlaylistItem GetSpecificFallback(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
-            var channelSetting = settings.Channels.FirstOrDefault(e => e.ChannelId == tvgName);
-            if (channelSetting == null || channelSetting.FallbackChannels == null)
+            var channelSetting = settings.Streams.FirstOrDefault(e => e.ChannelId == tvgName);
+            if (channelSetting == null || channelSetting.Fallbacks == null)
             {
                 return null;
             }
 
-            foreach (var fallbackChannelId in channelSetting.FallbackChannels)
+            foreach (var fallbackChannelId in channelSetting.Fallbacks)
             {
 
                 if (!playlistItems.ContainsKey(fallbackChannelId))
@@ -177,31 +174,31 @@ namespace Couchpotato.Business.Playlist
             return null;
         }
 
-        private PlaylistItem Map(PlaylistItem playlistItem, UserSettingsChannel channelSetting, UserSettings settings)
+        private PlaylistItem Map(PlaylistItem playlistItem, UserSettingsStream stream, UserSettings settings)
         {
             var channel = new PlaylistItem()
             {
                 TvgName = playlistItem.TvgName,
-                TvgId = channelSetting.EpgId ?? playlistItem.TvgId,
+                TvgId = stream.EpgId ?? playlistItem.TvgId,
                 TvgLogo = playlistItem.TvgLogo,
                 Url = playlistItem.Url
             };
 
-            if (!string.IsNullOrEmpty(channelSetting.CustomGroupName) || !string.IsNullOrEmpty(settings.DefaultChannelGroup))
+            if (!string.IsNullOrEmpty(stream.CustomGroupName) || !string.IsNullOrEmpty(settings.DefaultGroup))
             {
-                channel.GroupTitle = channelSetting.CustomGroupName ?? settings.DefaultChannelGroup;
+                channel.GroupTitle = stream.CustomGroupName ?? settings.DefaultGroup;
             }
             else
             {
                 channel.GroupTitle = playlistItem.GroupTitle;
             }
 
-            if (!string.IsNullOrEmpty(channelSetting.FriendlyName))
+            if (!string.IsNullOrEmpty(stream.FriendlyName))
             {
-                channel.FriendlyName = channelSetting.FriendlyName;
+                channel.FriendlyName = stream.FriendlyName;
             }
 
-            channel.Order = settings.Channels.IndexOf(channelSetting);
+            channel.Order = settings.Streams.IndexOf(stream);
 
             return channel;
         }
@@ -211,7 +208,7 @@ namespace Couchpotato.Business.Playlist
             var streams = new List<PlaylistItem>();
             var brokenStreams = new List<String>();
 
-            foreach (var channel in settings.Channels)
+            foreach (var channel in settings.Streams)
             {
                 if (channels.ContainsKey(channel.ChannelId))
                 {
@@ -266,7 +263,7 @@ namespace Couchpotato.Business.Playlist
                         TvgLogo = groupItem.TvgLogo,
                         Url = groupItem.Url,
                         GroupTitle = group.FriendlyName ?? group.GroupId,
-                        Order = settings.Channels.Count() + groupItems.IndexOf(groupItem)
+                        Order = settings.Streams.Count() + groupItems.IndexOf(groupItem)
                     };
 
                     streams.Add(stream);
