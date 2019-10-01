@@ -57,18 +57,14 @@ namespace Couchpotato.Business.Validation
         private bool CheckAvailability(string url)
         {
             var request = (HttpWebRequest)WebRequest.Create(url);
-            request.Method = "HEAD";
+            request.Method = "GET";
+            const int maxBytes = 512;
+            request.AddRange(0, maxBytes-1);
 
             try
             {
-                using (var response = (WebResponse)request.GetResponse())
+                using (var response = (HttpWebResponse)request.GetResponse())
                 {
-                    // As mentioned in the settings provider, the get() isn't really a great solution but it works for now
-                    if (!_settingsProvider.Get().Validation.ContentTypes.Any(e => e == response.ContentType))
-                    {
-                        return false;
-                    }
-
                     request.Abort();
 
                     return true;
