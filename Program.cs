@@ -9,6 +9,7 @@ using Couchpotato.Business.Compression;
 using Couchpotato.Business.Settings;
 using Couchpotato.Business.Validation;
 using Couchpotato.Business.IO;
+using Couchpotato.Business.Cache;
 
 namespace Couchpotato
 {
@@ -32,6 +33,7 @@ namespace Couchpotato
             builder.RegisterType<StreamValidator>().As<IStreamValidator>();
             builder.RegisterType<PluginHandler>().As<IPluginHandler>();
             builder.RegisterType<Logging>().As<ILogging>();
+            builder.RegisterType<CacheProvider>().As<ICacheProvider>();
            
             var container = builder.Build();
 

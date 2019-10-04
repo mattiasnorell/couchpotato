@@ -85,11 +85,11 @@ namespace Couchpotato {
             if(!channelResult.Any()){
                _logging.Info($"\nNo channels found so no reason to continue. Bye bye.");
                 
-                return;
+               Environment.Exit(0);
             }
 
             _pluginHandler.Run(PluginType.BeforeEpg, channelResult);
-            var epgFile = _epgProvider.GetProgramGuide(settings.EpgPath, settings);
+            var epgFile = _epgProvider.GetProgramGuide(settings.Epg.Paths, settings);
             _pluginHandler.Run(PluginType.AfterEpg, channelResult, epgFile);
 
             var outputPath = settings.OutputPath ?? "./";
@@ -97,7 +97,7 @@ namespace Couchpotato {
 
             if(!folderExist){
                 _logging.Info($"\nNo output folder found. Can't continue.");
-                return;
+                Environment.Exit(0);
             }
 
             var outputM3uPath = _playlistProvider.Save(outputPath, "channels.m3u", channelResult);

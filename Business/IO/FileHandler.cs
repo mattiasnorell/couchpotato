@@ -22,9 +22,27 @@ namespace Couchpotato.Business.IO
             _logging = logging;
         }
 
+        public DateTime GetModifiedDate(string path){
+            var fileInfo = new FileInfo(path);
+            return fileInfo.LastWriteTime;
+        }
+
         public string GetFilePath(string path, string fileName)
         {
             return Path.Combine(path, fileName);
+        }
+
+        public Stream ReadStream(string path){
+            var reader = new StreamReader(new FileStream(path, FileMode.Open), Encoding.UTF8);
+            return reader.BaseStream;
+        }
+
+        public void WriteStream(string path, Stream stream){
+            using (var output = new FileStream(path, FileMode.Create))
+            {
+                stream.Seek(0, SeekOrigin.Begin);
+                stream.CopyTo(output);
+            }
         }
 
         public string WriteXmlFile<T>(string path, string fileName, T content)
