@@ -18,11 +18,17 @@ Customize and aggregate M3U and EPG files
 {
     "outputPath": "Relative or absolute path to output folder",
     "m3uPath": "Path to m3u source",
-    "epgPath" : [
-        "Path to epg source 1",
-        "Path to epg source 2",
-        "etc..."
-    ],
+    "epg" : {
+        "cache": {
+            "enabled": true,
+            "lifespan": 24
+        },
+        "paths": [
+            "Path to epg source 1",
+            "Path to epg source 2",
+            "etc..."
+        ]
+    },
     "compress": true,
     "validation": {
         "enabled": true,
@@ -67,18 +73,6 @@ Customize and aggregate M3U and EPG files
     ]
 }
 ```
-
-| Property | Description | Type | Required |
-| :------------- | :------------- |:------------- |:------------- |
-| outputPath | Local path to where the generated files will be saved. Path can be either relative or absolute. | String | Yes |
-| m3uPath | Path to the source m3u-file. Local or http(s). | String | Yes |
-| validation | Check that streams are ok | UserSettingsValidation (default: false) | no |
-| defaultFallbacks | If a channel can't be valiated Couchpotato can try to find a fallback. | SettingsFallbackChannel | no |
-| epgPath | List of EPG-files (.xml or .xml.gz). Can be either local (relative or absolute) or http(s) path.| String | No |
-| compress | If you want the output files to be compressed. | Boolean (default: false) | No |
-| defaultGroup | The groupname used for all channels without a groupname or the "CustomChannelGroup" property. | String | No |
-| groups | Import all items from a group. | Array | No |
-| streams | Import individual items. | Array | No |
 
 ## How to compile/publish
 There is a lot more to this and others can explain it way better than me, but here are the basic commands. 
