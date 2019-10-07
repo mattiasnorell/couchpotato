@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
+using Couchpotato.Business.IO;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Settings;
 using Couchpotato.Core.Playlist;
@@ -12,14 +12,17 @@ namespace Couchpotato.Business.Validation
     {
         private readonly ILogging _logging;
         private readonly ISettingsProvider _settingsProvider;
+        private readonly IHttpClientWrapper _httpClientWrapper;
 
         public StreamValidator(
             ILogging logging,
-            ISettingsProvider settingsProvider
+            ISettingsProvider settingsProvider,
+            IHttpClientWrapper httpClientWrapper
             )
         {
             _logging = logging;
             _settingsProvider = settingsProvider;
+            _httpClientWrapper = httpClientWrapper;
         }
 
         public bool ValidateStreamByUrl(string url)
@@ -56,19 +59,9 @@ namespace Couchpotato.Business.Validation
 
         private bool CheckAvailability(string url)
         {
-            var request = (HttpWebRequest)WebRequest.Create(url);
-            request.Method = "GET";
-            const int maxBytes = 512;
-            request.AddRange(0, maxBytes-1);
-
             try
             {
-                using (var response = (HttpWebResponse)request.GetResponse())
-                {
-                    request.Abort();
-
-                    return true;
-                }
+                return _httpClientWrapper.Validate(url).Result;
             }
             catch (Exception)
             {

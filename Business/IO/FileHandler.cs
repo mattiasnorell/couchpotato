@@ -12,14 +12,17 @@ namespace Couchpotato.Business.IO
     {
         private readonly ICompression _compression;
         private readonly ILogging _logging;
+        private readonly IHttpClientWrapper _httpClientWrapper;
 
         public FileHandler(
             ICompression compression,
-            ILogging logging
+            ILogging logging,
+            IHttpClientWrapper httpClientWrapper
         )
         {
             _compression = compression;
             _logging = logging;
+            _httpClientWrapper = httpClientWrapper;
         }
 
         public DateTime GetModifiedDate(string path){
@@ -76,19 +79,7 @@ namespace Couchpotato.Business.IO
 
         private Stream DownloadFile(string path)
         {
-            using (var client = new WebClient())
-            {
-                try
-                {
-                    var result = client.OpenRead(path);
-
-                    return result;
-                }
-                catch (Exception)
-                {
-                    return null;
-                }
-            }
+            return _httpClientWrapper.Get(path)?.Result;
         }
 
         public Stream GetSource(string path)
