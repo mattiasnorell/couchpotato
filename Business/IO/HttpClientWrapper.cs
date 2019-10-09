@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -34,19 +35,18 @@ namespace Couchpotato.Business.IO
             }
         }
 
-        public async Task<bool> Validate(string url)
+        public async Task<bool> Validate(string url, string[] mediaTypes)
         {
-            const int maxBytes = 512;
-
             try
             {
                 var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-
-                using (var stream = await response.Content.ReadAsStreamAsync())
-                {
-                    var bytes = new byte[maxBytes];
-                    var bytesread = stream.Read(bytes, 0, bytes.Length);
-                    stream.Close();
+                
+                if(!response.IsSuccessStatusCode){
+                    return false;
+                }
+                
+                if(mediaTypes.Length > 0 && !mediaTypes.Any(e => e == response.Content.Headers.ContentType.MediaType)){
+                    return false;
                 }
                 
                 return true; 

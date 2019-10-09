@@ -60,7 +60,7 @@ namespace Couchpotato.Business.Playlist
         private void ValidateStreams(List<PlaylistItem> streams, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
             _logging.Print("\nValidating streams. This might disconnect all active streams.");
-            var invalidStreams = _streamValidator.ValidateStreams(streams);
+            var invalidStreams = _streamValidator.ValidateStreams(streams, settings.Validation.ContentTypes);
 
             if (invalidStreams == null || invalidStreams.Count == 0)
             {
@@ -111,6 +111,7 @@ namespace Couchpotato.Business.Playlist
             }
 
             var tvgNames = settings.DefaultStreamFallbacks.FirstOrDefault(e => originalTvgName.Contains(e.Key));
+            
 
             if (tvgNames == null || tvgNames.Value == null)
             {
@@ -120,14 +121,14 @@ namespace Couchpotato.Business.Playlist
             foreach (var tvgName in tvgNames.Value)
             {
                 var fallbackTvgName = originalTvgName.Replace(tvgNames.Key, tvgName);
-
+                
                 if (!playlistItems.ContainsKey(fallbackTvgName))
                 {
                     continue;
                 }
 
                 var fallback = playlistItems[fallbackTvgName];
-                var isValid = _streamValidator.ValidateStreamByUrl(fallback.Url);
+                var isValid = _streamValidator.ValidateStreamByUrl(fallback.Url, settings.Validation.ContentTypes);
                 if (!isValid)
                 {
                     continue;
@@ -162,7 +163,7 @@ namespace Couchpotato.Business.Playlist
                     continue;
                 }
 
-                var isValid = _streamValidator.ValidateStreamByUrl(fallbackChannel.Url);
+                var isValid = _streamValidator.ValidateStreamByUrl(fallbackChannel.Url, settings.Validation.ContentTypes);
 
                 if (isValid)
                 {

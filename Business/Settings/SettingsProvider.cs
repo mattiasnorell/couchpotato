@@ -32,7 +32,7 @@ namespace Couchpotato.Business.Settings
                 return null;
             }
 
-            using (StreamReader responseReader = new StreamReader(file))
+            using (var responseReader = new StreamReader(file))
             {
                 var response = responseReader.ReadToEnd();
                 _settings = JsonConvert.DeserializeObject<UserSettings>(response);
