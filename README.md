@@ -35,17 +35,17 @@ Customize and aggregate M3U and EPG files
         "contentTypes" :[
             "text/html",
             "audio/ogg"
-        ]
+        ],
+        "defaultFallbacks": [
+            {
+                "key": " FOO ",
+                "value": [
+                    " BAR ", 
+                    " "
+                ]
+            }
+        ],
     },
-    "defaultFallbacks": [
-        {
-            "key": " FHD ",
-            "value": [
-                " HD ", 
-                " "
-            ]
-        }
-    ],
     "defaultGroup": "Group title",
     "groups": [
        {

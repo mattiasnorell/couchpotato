@@ -105,12 +105,12 @@ namespace Couchpotato.Business.Playlist
         private PlaylistItem GetDefaultFallback(string originalTvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
 
-            if (settings.DefaultStreamFallbacks == null)
+            if (settings.Validation.DefaultFallbacks == null)
             {
                 return null;
             }
 
-            var tvgNames = settings.DefaultStreamFallbacks.FirstOrDefault(e => originalTvgName.Contains(e.Key));
+            var tvgNames = settings.Validation.DefaultFallbacks.FirstOrDefault(e => originalTvgName.Contains(e.Key));
             
 
             if (tvgNames == null || tvgNames.Value == null)
