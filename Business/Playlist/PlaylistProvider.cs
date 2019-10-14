@@ -4,7 +4,6 @@ using System.Linq;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Validation;
 using Couchpotato.Core.Playlist;
-using Couchpotato.Business.Playlist.Models;
 using Couchpotato.Business.Settings.Models;
 using Couchpotato.Business.IO;
 using Couchpotato.Business.Settings;
@@ -18,17 +17,20 @@ namespace Couchpotato.Business.Playlist
         private readonly IStreamValidator _streamValidator;
         private readonly ILogging _logging;
         private readonly IPlaylistParser _playlistParser;
+        private readonly IPlaylistItemMapper _playlistItemMapper;
 
         public PlaylistProvider(
             IFileHandler fileHandler,
             IStreamValidator streamValidator,
-            ILogging logging, 
-            IPlaylistParser playlistParser)
+            ILogging logging,
+            IPlaylistParser playlistParser,
+            IPlaylistItemMapper playlistItemMapper)
         {
             _fileHandler = fileHandler;
             _streamValidator = streamValidator;
             _logging = logging;
             _playlistParser = playlistParser;
+            _playlistItemMapper = playlistItemMapper;
         }
 
         public List<PlaylistItem> GetPlaylist(string path, UserSettings settings)
@@ -51,157 +53,10 @@ namespace Couchpotato.Business.Playlist
 
             if (settings.Validation.Enabled)
             {
-                ValidateStreams(playlistItems, playlistParsed, settings);
+                _streamValidator.ValidateStreams(playlistItems, playlistParsed, settings);
             }
 
             return playlistItems;
-        }
-
-        private void ValidateStreams(List<PlaylistItem> streams, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
-        {
-            _logging.Print("\nValidating streams. This might disconnect all active streams.");
-            var invalidStreams = _streamValidator.ValidateStreams(streams, settings.Validation.ContentTypes);
-
-            if (invalidStreams == null || invalidStreams.Count == 0)
-            {
-                return;
-            }
-
-            _logging.Info("\nBroken streams found, trying to find fallback channels");
-
-            foreach (var invalidStreamTvgName in invalidStreams)
-            {
-                var fallbackStream = GetFallbackStream(invalidStreamTvgName, playlistItems, settings);
-
-                if (fallbackStream != null)
-                {
-                    _logging.Info($"- Fallback found for {invalidStreamTvgName}, now using {fallbackStream.TvgName}");
-                    streams.Add(fallbackStream);
-                }
-                else
-                {
-                    _logging.Warn($"- Sorry, no fallback found for {invalidStreamTvgName}");
-                }
-            }
-        }
-
-        private PlaylistItem GetFallbackStream(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
-        {
-            var specificFallback = GetSpecificFallback(tvgName, playlistItems, settings);
-            if (specificFallback != null)
-            {
-                return specificFallback;
-            }
-
-            var fallbackStream = GetDefaultFallback(tvgName, playlistItems, settings);
-            if (fallbackStream != null)
-            {
-                return fallbackStream;
-            }
-
-            return null;
-        }
-
-        private PlaylistItem GetDefaultFallback(string originalTvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
-        {
-
-            if (settings.Validation.DefaultFallbacks == null)
-            {
-                return null;
-            }
-
-            var tvgNames = settings.Validation.DefaultFallbacks.FirstOrDefault(e => originalTvgName.Contains(e.Key));
-            
-
-            if (tvgNames == null || tvgNames.Value == null)
-            {
-                return null;
-            }
-
-            foreach (var tvgName in tvgNames.Value)
-            {
-                var fallbackTvgName = originalTvgName.Replace(tvgNames.Key, tvgName);
-                
-                if (!playlistItems.ContainsKey(fallbackTvgName))
-                {
-                    continue;
-                }
-
-                var fallback = playlistItems[fallbackTvgName];
-                var isValid = _streamValidator.ValidateStreamByUrl(fallback.Url, settings.Validation.ContentTypes);
-                if (!isValid)
-                {
-                    continue;
-                }
-
-                var channelSetting = settings.Streams.FirstOrDefault(e => e.ChannelId == originalTvgName);
-                return Map(fallback, channelSetting, settings);
-            };
-
-            return null;
-        }
-
-        private PlaylistItem GetSpecificFallback(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
-        {
-            var channelSetting = settings.Streams.FirstOrDefault(e => e.ChannelId == tvgName);
-            if (channelSetting == null || channelSetting.Fallbacks == null)
-            {
-                return null;
-            }
-
-            foreach (var fallbackChannelId in channelSetting.Fallbacks)
-            {
-
-                if (!playlistItems.ContainsKey(fallbackChannelId))
-                {
-                    continue;
-                }
-
-                var fallbackChannel = playlistItems[fallbackChannelId];
-                if (fallbackChannel == null)
-                {
-                    continue;
-                }
-
-                var isValid = _streamValidator.ValidateStreamByUrl(fallbackChannel.Url, settings.Validation.ContentTypes);
-
-                if (isValid)
-                {
-                    return Map(fallbackChannel, channelSetting, settings);
-                }
-
-            };
-
-            return null;
-        }
-
-        private PlaylistItem Map(PlaylistItem playlistItem, UserSettingsStream stream, UserSettings settings)
-        {
-            var channel = new PlaylistItem()
-            {
-                TvgName = playlistItem.TvgName,
-                TvgId = stream.EpgId ?? playlistItem.TvgId,
-                TvgLogo = playlistItem.TvgLogo,
-                Url = playlistItem.Url
-            };
-
-            if (!string.IsNullOrEmpty(stream.CustomGroupName) || !string.IsNullOrEmpty(settings.DefaultGroup))
-            {
-                channel.GroupTitle = stream.CustomGroupName ?? settings.DefaultGroup;
-            }
-            else
-            {
-                channel.GroupTitle = playlistItem.GroupTitle;
-            }
-
-            if (!string.IsNullOrEmpty(stream.FriendlyName))
-            {
-                channel.FriendlyName = stream.FriendlyName;
-            }
-
-            channel.Order = settings.Streams.IndexOf(stream);
-
-            return channel;
         }
 
         private List<PlaylistItem> GetSelectedChannels(Dictionary<string, PlaylistItem> channels, UserSettings settings)
@@ -214,7 +69,7 @@ namespace Couchpotato.Business.Playlist
                 if (channels.ContainsKey(channel.ChannelId))
                 {
                     var channelSetting = channels[channel.ChannelId];
-                    var channelItem = Map(channelSetting, channel, settings);
+                    var channelItem = _playlistItemMapper.Map(channelSetting, channel, settings);
                     streams.Add(channelItem);
                 }
                 else

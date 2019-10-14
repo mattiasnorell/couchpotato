@@ -47,6 +47,8 @@ namespace Couchpotato
             builder.RegisterType<PluginHandler>().As<IPluginHandler>();
             builder.RegisterType<Logging>().As<ILogging>();
             builder.RegisterType<CacheProvider>().As<ICacheProvider>();
+            builder.RegisterType<PlaylistItemMapper>().As<IPlaylistItemMapper>();
+            
             builder.Populate(services);
 
             var container = builder.Build();

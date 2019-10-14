@@ -49,6 +49,7 @@ namespace Couchpotato.Business.IO
                     return false;
                 }
                 
+                
                 return true; 
             }
             catch (Exception)
