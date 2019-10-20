@@ -38,7 +38,7 @@ namespace Couchpotato.Business.Validation
 
             _logging.Info("\nBroken streams found, trying to find fallback channels");
 
-            foreach (var invalidStream in streams.Where(e => !e.IsValid))
+            foreach (var invalidStream in streams.ToList().Where(e => !e.IsValid))
             {
                 var fallbackStream = GetFallbackStream(invalidStream.TvgName, playlistItems, settings);
 
@@ -118,9 +118,28 @@ namespace Couchpotato.Business.Validation
             return null;
         }
 
-        private PlaylistItem GetDefaultFallback(string originalTvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
-        {
+        public PlaylistItem GetSourceFallback(string id, Dictionary<string, PlaylistItem> channels, UserSettings settings){
+            var fallbacks = GetFallbacks(id, settings);
 
+            if(fallbacks == null){
+                return null;
+            }
+
+            foreach(var fallback in fallbacks.Value){
+                var fallbackTvgName = id.Replace(fallbacks.Key, fallback);
+
+                if (!channels.ContainsKey(fallbackTvgName))
+                {
+                    continue;
+                }
+
+                return channels[fallbackTvgName];
+            }
+
+            return null;
+        }
+
+        public UserSettingsValidationFallback GetFallbacks(string originalTvgName, UserSettings settings){
             if (settings.Validation.DefaultFallbacks == null)
             {
                 return null;
@@ -131,6 +150,18 @@ namespace Couchpotato.Business.Validation
 
             if (tvgNames == null || tvgNames.Value == null)
             {
+                return null;
+            }
+
+            return tvgNames;
+        }
+        
+        private PlaylistItem GetDefaultFallback(string originalTvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
+        {
+
+            var tvgNames = GetFallbacks(originalTvgName, settings);
+
+            if(tvgNames == null){
                 return null;
             }
 

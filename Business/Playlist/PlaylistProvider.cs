@@ -74,7 +74,24 @@ namespace Couchpotato.Business.Playlist
                 }
                 else
                 {
-                    brokenStreams.Add(channel.ChannelId);
+                    if (settings.Validation.Enabled)
+                    {
+                        var fallbackStream = _streamValidator.GetSourceFallback(channel.ChannelId, channels, settings);
+
+                        if (fallbackStream == null)
+                        {
+                            brokenStreams.Add(channel.ChannelId);
+                            continue;
+                        }
+
+                        var fallbackChannelItem = _playlistItemMapper.Map(fallbackStream, channel, settings);
+                        streams.Add(fallbackChannelItem);
+                        _logging.Info($"Could not find {channel.ChannelId} so I'm using the fallback {fallbackChannelItem.TvgName}");
+                    }
+                    else
+                    {
+                        brokenStreams.Add(channel.ChannelId);
+                    }
                 }
             }
 

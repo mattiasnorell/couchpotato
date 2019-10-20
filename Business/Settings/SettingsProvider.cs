@@ -40,10 +40,5 @@ namespace Couchpotato.Business.Settings
                 return _settings;
             }
         }
-
-        public UserSettings Get(){
-            // Ok, I know this isn't optimal but it works for now
-            return _settings;
-        }
     }
 }

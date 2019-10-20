@@ -5,6 +5,5 @@ namespace Couchpotato.Business.Settings
     public interface ISettingsProvider
     {
         UserSettings Load(string path);
-        UserSettings Get();
     }
 }

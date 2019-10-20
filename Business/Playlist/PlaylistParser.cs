@@ -44,7 +44,7 @@ namespace Couchpotato.Business.Playlist
 
                 streams.Add(tvgName, playlistItem);
 
-                _logging.Progress($"Crunching playlist data", i, numberOfLines);
+                _logging.Progress($"Crunching playlist data", i, numberOfLines - 2);
             }
 
             return streams;
