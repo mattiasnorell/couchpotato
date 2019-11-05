@@ -182,6 +182,11 @@ namespace Couchpotato.Business.Validation
                 }
 
                 var channelSetting = settings.Streams.FirstOrDefault(e => e.ChannelId == originalTvgName);
+
+                if(channelSetting == null){
+                    return null;
+                }
+                
                 return _playlistItemMapper.Map(fallback, channelSetting, settings);
             };
 

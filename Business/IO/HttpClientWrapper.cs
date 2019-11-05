@@ -25,9 +25,7 @@ namespace Couchpotato.Business.IO
             try
             {
                 var response = await _httpClient.SendAsync(request);
-                var stream = response.Content.ReadAsStreamAsync().Result;
-
-                return stream;
+                return await response.Content.ReadAsStreamAsync();
             }
             catch (Exception)
             {
