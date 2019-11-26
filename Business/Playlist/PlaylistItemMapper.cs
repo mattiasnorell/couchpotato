@@ -9,7 +9,7 @@ namespace Couchpotato.Business.Playlist
             {
                 TvgName = playlistItem.TvgName,
                 TvgId = stream.EpgId ?? playlistItem.TvgId,
-                TvgLogo = playlistItem.TvgLogo,
+                TvgLogo = stream.CustomLogo ?? playlistItem.TvgLogo,
                 Url = playlistItem.Url
             };
 
