@@ -16,6 +16,8 @@ namespace Couchpotato.Business.IO
         public HttpClientWrapper(HttpClient httpClient)
         {
             _httpClient = httpClient;
+
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36");
         }
 
         public async Task<Stream> Get(string url)
@@ -33,22 +35,49 @@ namespace Couchpotato.Business.IO
             }
         }
 
+
         public async Task<bool> Validate(string url, string[] mediaTypes)
         {
+
             try
             {
-                var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-                
-                if(!response.IsSuccessStatusCode){
-                    return false;
+                using (var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+                {
+                    response.EnsureSuccessStatusCode();
+
+                    using (var contentStream = await response.Content.ReadAsStreamAsync())
+                    {
+                        var bytesRead = 0L;
+                        var buffer = new byte[8192];
+                        var shouldContinue = true;
+                        var maxBytes = 100000;
+
+                        do
+                        {
+                            var bytes = await contentStream.ReadAsync(buffer, 0, buffer.Length);
+
+                            if (bytes == 0)
+                            {
+                                shouldContinue = false;
+
+                                return false;
+                            }
+                            else if (bytesRead >= maxBytes)
+                            {
+                                shouldContinue = false;
+                                return true;
+                            }
+                            else
+                            {
+                                bytesRead += bytes;
+                            }
+                        }
+                        while (shouldContinue);
+                    }
                 }
-                
-                if(mediaTypes.Length > 0 && !mediaTypes.Any(e => e == response.Content.Headers.ContentType.MediaType)){
-                    return false;
-                }
-                
-                
-                return true; 
+
+
+                return true;
             }
             catch (Exception)
             {
