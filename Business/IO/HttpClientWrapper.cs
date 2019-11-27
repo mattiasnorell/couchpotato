@@ -47,6 +47,11 @@ namespace Couchpotato.Business.IO
 
                     using (var contentStream = await response.Content.ReadAsStreamAsync())
                     {
+
+                        if(mediaTypes.Length > 0 && !mediaTypes.Any(e => e == response.Content.Headers.ContentType.MediaType)){
+                            return false;
+                        }
+
                         var bytesRead = 0L;
                         var buffer = new byte[8192];
                         var shouldContinue = true;
