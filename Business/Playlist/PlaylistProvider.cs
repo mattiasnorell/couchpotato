@@ -86,7 +86,7 @@ namespace Couchpotato.Business.Playlist
 
                         var fallbackChannelItem = _playlistItemMapper.Map(fallbackStream, channel, settings);
                         streams.Add(fallbackChannelItem);
-                        _logging.Info($"Could not find {channel.ChannelId} so I'm using the fallback {fallbackChannelItem.TvgName}");
+                        _logging.Info($"Could not find {channel.ChannelId}, using {fallbackChannelItem.TvgName}");
                     }
                     else
                     {

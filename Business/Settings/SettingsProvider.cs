@@ -6,7 +6,7 @@ using Couchpotato.Business.Settings.Models;
 
 namespace Couchpotato.Business.Settings
 {
-    public class SettingsProvider :  ISettingsProvider
+    public class SettingsProvider : ISettingsProvider
     {
         private readonly IFileHandler _fileHandler;
         private readonly ILogging _logging;
@@ -16,7 +16,8 @@ namespace Couchpotato.Business.Settings
         public SettingsProvider(
             IFileHandler fileHandler,
             ILogging logging
-        ){
+        )
+        {
             _fileHandler = fileHandler;
             _logging = logging;
         }
@@ -24,10 +25,11 @@ namespace Couchpotato.Business.Settings
         public UserSettings Load(string path)
         {
             _logging.Print("Loading settings from " + path);
-            
+
             var file = _fileHandler.GetSource(path);
 
-            if(file == null){
+            if (file == null)
+            {
                 _logging.Error($"- Couldn't load settingsfile from {path}");
                 return null;
             }
@@ -40,5 +42,8 @@ namespace Couchpotato.Business.Settings
                 return _settings;
             }
         }
+
+        public UserSettingsValidation Validation
+        {get { return _settings.Validation; }}
     }
 }

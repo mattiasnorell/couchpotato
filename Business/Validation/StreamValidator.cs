@@ -29,7 +29,7 @@ namespace Couchpotato.Business.Validation
         public void ValidateStreams(List<PlaylistItem> streams, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
         {
             _logging.Print("\nValidating streams. This might disconnect all active streams.");
-            Validate(streams, settings.Validation.ContentTypes);
+            Validate(streams, settings.Validation.ContentTypes, settings.Validation.MinimumContentLength);
 
             if (!streams.Any(e => !e.IsValid))
             {
@@ -59,24 +59,24 @@ namespace Couchpotato.Business.Validation
             }
         }
 
-        public bool ValidateStreamByUrl(string url, string[] mediaTypes)
+        public bool ValidateStreamByUrl(string url, string[] mediaTypes, int minimumContentLength)
         {
-            return CheckAvailability(url, mediaTypes);
+            return CheckAvailability(url, mediaTypes, minimumContentLength);
         }
 
-        public bool ValidateSingleStream(PlaylistItem stream, string[] mediaTypes)
+        public bool ValidateSingleStream(PlaylistItem stream, string[] mediaTypes, int minimumContentLength)
         {
-            return CheckAvailability(stream.Url, mediaTypes);
+            return CheckAvailability(stream.Url, mediaTypes, minimumContentLength);
         }
 
-        private void Validate(List<PlaylistItem> streams, string[] mediaTypes)
+        private void Validate(List<PlaylistItem> streams, string[] mediaTypes, int minimumContentLength)
         {
             var streamCount = streams.Count();
             var i = 0;
 
             foreach (var stream in streams.ToList())
             {
-                if (!CheckAvailability(stream.Url, mediaTypes))
+                if (!CheckAvailability(stream.Url, mediaTypes, minimumContentLength))
                 {
                     stream.IsValid = false;
                 }
@@ -87,11 +87,11 @@ namespace Couchpotato.Business.Validation
             }
         }
 
-        private bool CheckAvailability(string url, string[] mediaTypes)
+        private bool CheckAvailability(string url, string[] mediaTypes, int minimumContentLength)
         {
             try
             {
-                return _httpClientWrapper.Validate(url, mediaTypes).Result;
+                return _httpClientWrapper.Validate(url, mediaTypes, minimumContentLength).Result;
             }
             catch (Exception)
             {
@@ -175,7 +175,7 @@ namespace Couchpotato.Business.Validation
                 }
 
                 var fallback = playlistItems[fallbackTvgName];
-                var isValid = ValidateStreamByUrl(fallback.Url, settings.Validation.ContentTypes);
+                var isValid = ValidateStreamByUrl(fallback.Url, settings.Validation.ContentTypes, settings.Validation.MinimumContentLength);
                 if (!isValid)
                 {
                     continue;
@@ -215,7 +215,7 @@ namespace Couchpotato.Business.Validation
                     continue;
                 }
 
-                var isValid = ValidateStreamByUrl(fallbackChannel.Url, settings.Validation.ContentTypes);
+                var isValid = ValidateStreamByUrl(fallbackChannel.Url, settings.Validation.ContentTypes, settings.Validation.MinimumContentLength);
 
                 if (isValid)
                 {

@@ -36,7 +36,7 @@ namespace Couchpotato.Business.IO
         }
 
 
-        public async Task<bool> Validate(string url, string[] mediaTypes)
+        public async Task<bool> Validate(string url, string[] mediaTypes, int minimumContentLength = 100000)
         {
 
             try
@@ -55,7 +55,6 @@ namespace Couchpotato.Business.IO
                         var bytesRead = 0L;
                         var buffer = new byte[8192];
                         var shouldContinue = true;
-                        var maxBytes = 100000;
 
                         do
                         {
@@ -67,7 +66,7 @@ namespace Couchpotato.Business.IO
 
                                 return false;
                             }
-                            else if (bytesRead >= maxBytes)
+                            else if (bytesRead >= minimumContentLength)
                             {
                                 shouldContinue = false;
                                 return true;
