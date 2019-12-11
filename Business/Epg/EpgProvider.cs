@@ -8,6 +8,7 @@ using Couchpotato.Core.Epg;
 using Couchpotato.Business.Settings.Models;
 using Couchpotato.Business.IO;
 using Couchpotato.Business.Cache;
+using Couchpotato.Business.Settings;
 
 namespace Couchpotato.Business
 {
@@ -16,22 +17,25 @@ namespace Couchpotato.Business
         private readonly IFileHandler _fileHandler;
         private readonly ILogging _logging;
         private readonly ICacheProvider _cacheProvider;
+        private readonly ISettingsProvider _settingsProvider;
 
         public EpgProvider(
             IFileHandler fileHandler,
             ILogging logging,
-            ICacheProvider cacheProvider
+            ICacheProvider cacheProvider,
+            ISettingsProvider settingsProvider
         )
         {
             _fileHandler = fileHandler;
             _logging = logging;
             _cacheProvider = cacheProvider;
+            _settingsProvider = settingsProvider;
         }
 
-        public EpgList GetProgramGuide(string[] paths, UserSettings settings)
+        public EpgList GetProgramGuide(string[] paths)
         {
-            var loadedEpgLists = Load(paths, settings);
-            var filteredEpgList = Filter(loadedEpgLists, settings.Streams);
+            var loadedEpgLists = Load(paths);
+            var filteredEpgList = Filter(loadedEpgLists);
 
             return filteredEpgList;
         }
@@ -41,7 +45,7 @@ namespace Couchpotato.Business
             return _fileHandler.WriteXmlFile<EpgList>(path, fileName, epgList);
         }
 
-        private EpgList Load(string[] paths, UserSettings userSettings)
+        private EpgList Load(string[] paths)
         {
             _logging.Print($"\nLoading EPG-files:");
 
@@ -55,7 +59,7 @@ namespace Couchpotato.Business
 
             foreach (var path in paths)
             {
-                var epgFile = Parse(path, userSettings);
+                var epgFile = Parse(path);
 
                 if (epgFile == null)
                 {
@@ -70,7 +74,7 @@ namespace Couchpotato.Business
             return epgList;
         }
 
-        private EpgList Parse(string path, UserSettings userSettings)
+        private EpgList Parse(string path)
         {
             using (var stream = _fileHandler.GetSource(path))
             {
@@ -80,12 +84,12 @@ namespace Couchpotato.Business
                 if (streamValue == null)
                 {
 
-                    if (!userSettings.Epg.Cache.Enabled)
+                    if (!_settingsProvider.Epg.Cache.Enabled)
                     {
                         return null;
                     }
 
-                    streamValue = _cacheProvider.Get(path, userSettings.Epg.Cache.Lifespan);
+                    streamValue = _cacheProvider.Get(path, _settingsProvider.Epg.Cache.Lifespan);
 
                     if (streamValue == null)
                     {
@@ -106,7 +110,7 @@ namespace Couchpotato.Business
                     var serializer = new XmlSerializer(typeof(EpgList), xRoot);
                     var returnValue = serializer.Deserialize(streamValue) as EpgList;
 
-                    if (userSettings.Epg.Cache.Enabled)
+                    if (_settingsProvider.Epg.Cache.Enabled)
                     {
                         _cacheProvider.Set(path, streamValue);
                     }
@@ -121,10 +125,10 @@ namespace Couchpotato.Business
             };
         }
 
-        private EpgList Filter(EpgList input, List<UserSettingsStream> channels)
+        private EpgList Filter(EpgList input)
         {
             var i = 0;
-            var channelCount = channels.Count;
+            var channelCount = _settingsProvider.Streams.Count;
             var epgFile = new EpgList()
             {
                 GeneratorInfoName = "",
@@ -135,7 +139,7 @@ namespace Couchpotato.Business
 
             var missingChannels = new List<UserSettingsStream>();
 
-            foreach (var settingsChannel in channels)
+            foreach (var settingsChannel in _settingsProvider.Streams)
             {
                 i = i + 1;
                 _logging.Progress($"Filtering EPG-files", i, channelCount);

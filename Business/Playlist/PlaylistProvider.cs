@@ -4,7 +4,6 @@ using System.Linq;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Validation;
 using Couchpotato.Core.Playlist;
-using Couchpotato.Business.Settings.Models;
 using Couchpotato.Business.IO;
 using Couchpotato.Business.Settings;
 using System.IO;
@@ -18,65 +17,68 @@ namespace Couchpotato.Business.Playlist
         private readonly ILogging _logging;
         private readonly IPlaylistParser _playlistParser;
         private readonly IPlaylistItemMapper _playlistItemMapper;
+        private readonly ISettingsProvider _settingsProvider;
 
         public PlaylistProvider(
             IFileHandler fileHandler,
             IStreamValidator streamValidator,
             ILogging logging,
             IPlaylistParser playlistParser,
-            IPlaylistItemMapper playlistItemMapper)
+            IPlaylistItemMapper playlistItemMapper,
+            ISettingsProvider settingsProvider)
         {
             _fileHandler = fileHandler;
             _streamValidator = streamValidator;
             _logging = logging;
             _playlistParser = playlistParser;
             _playlistItemMapper = playlistItemMapper;
+            _settingsProvider = settingsProvider;
         }
 
-        public List<PlaylistItem> GetPlaylist(string path, UserSettings settings)
+        public List<PlaylistItem> GetPlaylist()
         {
-            var playlistFile = Load(path);
+            var playlistFile = Load(_settingsProvider.Source);
             var playlistParsed = _playlistParser.Parse(playlistFile);
             var playlistItems = new List<PlaylistItem>();
 
-            if (settings.Streams.Any())
+            if (_settingsProvider.Streams.Any())
             {
-                var items = GetSelectedChannels(playlistParsed, settings);
+                var items = GetSelectedChannels(playlistParsed);
                 playlistItems.AddRange(items);
             }
 
-            if (settings.Groups.Any())
+            if (_settingsProvider.Groups.Any())
             {
-                var groupItems = GetSelectedGroups(playlistParsed, settings);
+                var groupItems = GetSelectedGroups(playlistParsed);
                 playlistItems.AddRange(groupItems);
             }
 
-            if (settings.Validation.Enabled)
+            if (playlistItems.Count > 0 && _settingsProvider.Validation.Enabled)
             {
-                _streamValidator.ValidateStreams(playlistItems, playlistParsed, settings);
+                _streamValidator.ValidateStreams(playlistItems, playlistParsed);
             }
 
             return playlistItems;
         }
 
-        private List<PlaylistItem> GetSelectedChannels(Dictionary<string, PlaylistItem> channels, UserSettings settings)
+        private List<PlaylistItem> GetSelectedChannels(Dictionary<string, PlaylistItem> channels)
         {
             var streams = new List<PlaylistItem>();
             var brokenStreams = new List<String>();
 
-            foreach (var channel in settings.Streams)
+            foreach (var channel in _settingsProvider.Streams)
             {
                 if (channels.ContainsKey(channel.ChannelId))
                 {
                     var channelSetting = channels[channel.ChannelId];
-                    var channelItem = _playlistItemMapper.Map(channelSetting, channel, settings);
+                    var channelItem = _playlistItemMapper.Map(channelSetting, channel);
                     streams.Add(channelItem);
                 }
                 else
                 {
-                    if (settings.Validation.Enabled)
+                    if (_settingsProvider.Validation.Enabled)
                     {
-                        var fallbackStream = _streamValidator.GetSourceFallback(channel.ChannelId, channels, settings);
+                        var fallbackStream = _streamValidator.GetSourceFallback(channel.ChannelId, channels);
 
                         if (fallbackStream == null)
                         {
@@ -84,7 +86,7 @@ namespace Couchpotato.Business.Playlist
                             continue;
                         }
 
-                        var fallbackChannelItem = _playlistItemMapper.Map(fallbackStream, channel, settings);
+                        var fallbackChannelItem = _playlistItemMapper.Map(fallbackStream, channel);
                         streams.Add(fallbackChannelItem);
                         _logging.Info($"Could not find {channel.ChannelId}, using {fallbackChannelItem.TvgName}");
                     }
@@ -109,11 +111,11 @@ namespace Couchpotato.Business.Playlist
         }
 
 
-        private List<PlaylistItem> GetSelectedGroups(Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
+        private List<PlaylistItem> GetSelectedGroups(Dictionary<string, PlaylistItem> playlistItems)
         {
             var streams = new List<PlaylistItem>();
 
-            foreach (var group in settings.Groups)
+            foreach (var group in _settingsProvider.Groups)
             {
                 var groupItems = playlistItems?.Values.Where(e => e.GroupTitle == group.GroupId).ToList();
 
@@ -136,7 +138,7 @@ namespace Couchpotato.Business.Playlist
                         TvgLogo = groupItem.TvgLogo,
                         Url = groupItem.Url,
                         GroupTitle = group.FriendlyName ?? group.GroupId,
-                        Order = settings.Streams.Count() + groupItems.IndexOf(groupItem)
+                        Order = _settingsProvider.Streams.Count() + groupItems.IndexOf(groupItem)
                     };
 
                     streams.Add(stream);

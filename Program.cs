@@ -47,20 +47,14 @@ namespace Couchpotato
             builder.RegisterType<Logging>().As<ILogging>();
             builder.RegisterType<CacheProvider>().As<ICacheProvider>();
             builder.RegisterType<PlaylistItemMapper>().As<IPlaylistItemMapper>();
+            builder.RegisterType<SettingsProvider>().As<ISettingsProvider>().InstancePerLifetimeScope();
 
             builder.Populate(services);
 
-            var container = builder.Build();
-
-            using (var scope = container.BeginLifetimeScope(
-                builder =>
-                {
-                    builder.RegisterType<SettingsProvider>().As<ISettingsProvider>();
-                }))
-            {
-                var app = scope.Resolve<IApplication>();
-                app.Run(args);
-            }
+            using(var container = builder.Build()){
+                var app = container.Resolve<IApplication>();
+                app.Run(container, args);
+            };
         }
     }
 }

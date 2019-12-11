@@ -1,10 +1,17 @@
+using Couchpotato.Business.Settings;
 using Couchpotato.Business.Settings.Models;
 using Couchpotato.Core.Playlist;
 
 namespace Couchpotato.Business.Playlist
 {
     public class PlaylistItemMapper: IPlaylistItemMapper{
-        public PlaylistItem Map(PlaylistItem playlistItem, UserSettingsStream stream, UserSettings settings){
+        private readonly ISettingsProvider _settingsProvider;
+
+        public PlaylistItemMapper(ISettingsProvider settingsProvider){
+            _settingsProvider = settingsProvider;
+        }
+
+        public PlaylistItem Map(PlaylistItem playlistItem, UserSettingsStream stream){
             var channel = new PlaylistItem()
             {
                 TvgName = playlistItem.TvgName,
@@ -13,9 +20,9 @@ namespace Couchpotato.Business.Playlist
                 Url = playlistItem.Url
             };
 
-            if (!string.IsNullOrEmpty(stream.CustomGroupName) || !string.IsNullOrEmpty(settings.DefaultGroup))
+            if (!string.IsNullOrEmpty(stream.CustomGroupName) || !string.IsNullOrEmpty(_settingsProvider.DefaultGroup))
             {
-                channel.GroupTitle = stream.CustomGroupName ?? settings.DefaultGroup;
+                channel.GroupTitle = stream.CustomGroupName ?? _settingsProvider.DefaultGroup;
             }
             else
             {
@@ -27,7 +34,7 @@ namespace Couchpotato.Business.Playlist
                 channel.FriendlyName = stream.FriendlyName;
             }
 
-            channel.Order = settings.Streams.IndexOf(stream);
+            channel.Order = _settingsProvider.Streams.IndexOf(stream);
 
             return channel;
         }

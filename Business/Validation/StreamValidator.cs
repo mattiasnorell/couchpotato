@@ -4,6 +4,7 @@ using System.Linq;
 using Couchpotato.Business.IO;
 using Couchpotato.Business.Logging;
 using Couchpotato.Business.Playlist;
+using Couchpotato.Business.Settings;
 using Couchpotato.Business.Settings.Models;
 using Couchpotato.Core.Playlist;
 
@@ -14,22 +15,25 @@ namespace Couchpotato.Business.Validation
         private readonly ILogging _logging;
         private readonly IHttpClientWrapper _httpClientWrapper;
         private readonly IPlaylistItemMapper _playlistItemMapper;
+        private readonly ISettingsProvider _settingsProvider;
 
         public StreamValidator(
             ILogging logging,
             IHttpClientWrapper httpClientWrapper,
-            IPlaylistItemMapper playlistItemMapper
+            IPlaylistItemMapper playlistItemMapper,
+            ISettingsProvider settingsProvider
             )
         {
             _logging = logging;
             _httpClientWrapper = httpClientWrapper;
             _playlistItemMapper = playlistItemMapper;
+            _settingsProvider = settingsProvider;
         }
 
-        public void ValidateStreams(List<PlaylistItem> streams, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
+        public void ValidateStreams(List<PlaylistItem> streams, Dictionary<string, PlaylistItem> playlistItems)
         {
             _logging.Print("\nValidating streams. This might disconnect all active streams.");
-            Validate(streams, settings.Validation.ContentTypes, settings.Validation.MinimumContentLength);
+            Validate(streams);
 
             if (!streams.Any(e => !e.IsValid))
             {
@@ -40,7 +44,7 @@ namespace Couchpotato.Business.Validation
 
             foreach (var invalidStream in streams.ToList().Where(e => !e.IsValid))
             {
-                var fallbackStream = GetFallbackStream(invalidStream.TvgName, playlistItems, settings);
+                var fallbackStream = GetFallbackStream(invalidStream.TvgName, playlistItems);
 
                 if (fallbackStream != null)
                 {
@@ -54,29 +58,29 @@ namespace Couchpotato.Business.Validation
             }
 
             // Temporary workaround
-            if (!settings.Validation.ShowInvalid){
+            if (!_settingsProvider.Validation.ShowInvalid){
                 streams = streams.Where(e => e.IsValid).ToList();
             }
         }
 
-        public bool ValidateStreamByUrl(string url, string[] mediaTypes, int minimumContentLength)
+        public bool ValidateStreamByUrl(string url)
         {
-            return CheckAvailability(url, mediaTypes, minimumContentLength);
+            return CheckAvailability(url);
         }
 
-        public bool ValidateSingleStream(PlaylistItem stream, string[] mediaTypes, int minimumContentLength)
+        public bool ValidateSingleStream(PlaylistItem stream)
         {
-            return CheckAvailability(stream.Url, mediaTypes, minimumContentLength);
+            return CheckAvailability(stream.Url);
         }
 
-        private void Validate(List<PlaylistItem> streams, string[] mediaTypes, int minimumContentLength)
+        private void Validate(List<PlaylistItem> streams)
         {
             var streamCount = streams.Count();
             var i = 0;
 
             foreach (var stream in streams.ToList())
             {
-                if (!CheckAvailability(stream.Url, mediaTypes, minimumContentLength))
+                if (!CheckAvailability(stream.Url))
                 {
                     stream.IsValid = false;
                 }
@@ -87,11 +91,11 @@ namespace Couchpotato.Business.Validation
             }
         }
 
-        private bool CheckAvailability(string url, string[] mediaTypes, int minimumContentLength)
+        private bool CheckAvailability(string url)
         {
             try
             {
-                return _httpClientWrapper.Validate(url, mediaTypes, minimumContentLength).Result;
+                return _httpClientWrapper.Validate(url, _settingsProvider.Validation.ContentTypes, _settingsProvider.Validation.MinimumContentLength).Result;
             }
             catch (Exception)
             {
@@ -101,15 +105,15 @@ namespace Couchpotato.Business.Validation
 
 
 
-        private PlaylistItem GetFallbackStream(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
+        private PlaylistItem GetFallbackStream(string tvgName, Dictionary<string, PlaylistItem> playlistItems)
         {
-            var specificFallback = GetSpecificFallback(tvgName, playlistItems, settings);
+            var specificFallback = GetSpecificFallback(tvgName, playlistItems);
             if (specificFallback != null)
             {
                 return specificFallback;
             }
 
-            var fallbackStream = GetDefaultFallback(tvgName, playlistItems, settings);
+            var fallbackStream = GetDefaultFallback(tvgName, playlistItems);
             if (fallbackStream != null)
             {
                 return fallbackStream;
@@ -118,8 +122,8 @@ namespace Couchpotato.Business.Validation
             return null;
         }
 
-        public PlaylistItem GetSourceFallback(string id, Dictionary<string, PlaylistItem> channels, UserSettings settings){
-            var fallbacks = GetFallbacks(id, settings);
+        public PlaylistItem GetSourceFallback(string id, Dictionary<string, PlaylistItem> channels){
+            var fallbacks = GetFallbacks(id);
 
             if(fallbacks == null){
                 return null;
@@ -139,13 +143,13 @@ namespace Couchpotato.Business.Validation
             return null;
         }
 
-        public UserSettingsValidationFallback GetFallbacks(string originalTvgName, UserSettings settings){
-            if (settings.Validation.DefaultFallbacks == null)
+        public UserSettingsValidationFallback GetFallbacks(string originalTvgName){
+            if (_settingsProvider.Validation.DefaultFallbacks == null)
             {
                 return null;
             }
 
-            var tvgNames = settings.Validation.DefaultFallbacks.FirstOrDefault(e => originalTvgName.Contains(e.Key));
+            var tvgNames = _settingsProvider.Validation.DefaultFallbacks.FirstOrDefault(e => originalTvgName.Contains(e.Key));
 
 
             if (tvgNames == null || tvgNames.Value == null)
@@ -156,10 +160,10 @@ namespace Couchpotato.Business.Validation
             return tvgNames;
         }
         
-        private PlaylistItem GetDefaultFallback(string originalTvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
+        private PlaylistItem GetDefaultFallback(string originalTvgName, Dictionary<string, PlaylistItem> playlistItems)
         {
 
-            var tvgNames = GetFallbacks(originalTvgName, settings);
+            var tvgNames = GetFallbacks(originalTvgName);
 
             if(tvgNames == null){
                 return null;
@@ -175,27 +179,27 @@ namespace Couchpotato.Business.Validation
                 }
 
                 var fallback = playlistItems[fallbackTvgName];
-                var isValid = ValidateStreamByUrl(fallback.Url, settings.Validation.ContentTypes, settings.Validation.MinimumContentLength);
+                var isValid = ValidateStreamByUrl(fallback.Url);
                 if (!isValid)
                 {
                     continue;
                 }
 
-                var channelSetting = settings.Streams.FirstOrDefault(e => e.ChannelId == originalTvgName);
+                var channelSetting = _settingsProvider.Streams.FirstOrDefault(e => e.ChannelId == originalTvgName);
 
                 if(channelSetting == null){
                     return null;
                 }
                 
-                return _playlistItemMapper.Map(fallback, channelSetting, settings);
+                return _playlistItemMapper.Map(fallback, channelSetting);
             };
 
             return null;
         }
 
-        private PlaylistItem GetSpecificFallback(string tvgName, Dictionary<string, PlaylistItem> playlistItems, UserSettings settings)
+        private PlaylistItem GetSpecificFallback(string tvgName, Dictionary<string, PlaylistItem> playlistItems)
         {
-            var channelSetting = settings.Streams.FirstOrDefault(e => e.ChannelId == tvgName);
+            var channelSetting = _settingsProvider.Streams.FirstOrDefault(e => e.ChannelId == tvgName);
             if (channelSetting == null || channelSetting.Fallbacks == null)
             {
                 return null;
@@ -215,11 +219,11 @@ namespace Couchpotato.Business.Validation
                     continue;
                 }
 
-                var isValid = ValidateStreamByUrl(fallbackChannel.Url, settings.Validation.ContentTypes, settings.Validation.MinimumContentLength);
+                var isValid = ValidateStreamByUrl(fallbackChannel.Url);
 
                 if (isValid)
                 {
-                    return _playlistItemMapper.Map(fallbackChannel, channelSetting, settings);
+                    return _playlistItemMapper.Map(fallbackChannel, channelSetting);
                 }
 
             };

@@ -1,3 +1,3 @@
 public interface IApplication{
-    void Run(string[] settingsPaths);
+    void Run(Autofac.IContainer container, string[] args);
 }

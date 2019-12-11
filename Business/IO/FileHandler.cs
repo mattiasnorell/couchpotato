@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Net;
 using System.Text;
 using System.Xml.Serialization;
 using Couchpotato.Business.Compression;
@@ -25,7 +24,8 @@ namespace Couchpotato.Business.IO
             _httpClientWrapper = httpClientWrapper;
         }
 
-        public DateTime GetModifiedDate(string path){
+        public DateTime GetModifiedDate(string path)
+        {
             var fileInfo = new FileInfo(path);
             return fileInfo.LastWriteTime;
         }
@@ -35,12 +35,14 @@ namespace Couchpotato.Business.IO
             return Path.Combine(path, fileName);
         }
 
-        public Stream ReadStream(string path){
+        public Stream ReadStream(string path)
+        {
             var reader = new StreamReader(new FileStream(path, FileMode.Open), Encoding.UTF8);
             return reader.BaseStream;
         }
 
-        public void WriteStream(string path, Stream stream){
+        public void WriteStream(string path, Stream stream)
+        {
             using (var output = new FileStream(path, FileMode.Create))
             {
                 stream.Seek(0, SeekOrigin.Begin);
@@ -84,6 +86,12 @@ namespace Couchpotato.Business.IO
 
         public Stream GetSource(string path)
         {
+            if (string.IsNullOrEmpty(path))
+            {
+                _logging.Error($"  Source file path cannot be empty.");
+                return null;
+            }
+
             if (path.StartsWith("http"))
             {
                 _logging.Print($"- Downloading file from {path}");

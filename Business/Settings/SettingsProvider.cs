@@ -3,6 +3,7 @@ using Couchpotato.Business.Logging;
 using Couchpotato.Business.IO;
 using Newtonsoft.Json;
 using Couchpotato.Business.Settings.Models;
+using System.Collections.Generic;
 
 namespace Couchpotato.Business.Settings
 {
@@ -22,7 +23,70 @@ namespace Couchpotato.Business.Settings
             _logging = logging;
         }
 
-        public UserSettings Load(string path)
+        public string Source
+        {
+            get
+            {
+                return _settings?.M3uPath ?? null;
+            }
+        }
+
+        public string DefaultGroup
+        {
+            get
+            {
+                return _settings.DefaultGroup;
+            }
+        }
+
+        public string OutputPath
+        {
+            get
+            {
+                return _settings.OutputPath;
+            }
+        }
+
+        public bool Compress
+        {
+            get
+            {
+                return _settings.Compress;
+            }
+        }
+        public UserSettingsEpg Epg
+        {
+            get
+            {
+                return _settings.Epg;
+            }
+        }
+
+        public List<UserSettingsStream> Streams
+        {
+            get
+            {
+                return _settings.Streams;
+            }
+        }
+
+        public List<UserSettingsGroup> Groups
+        {
+            get
+            {
+                return _settings.Groups;
+            }
+        }
+
+        public UserSettingsValidation Validation
+        {
+            get
+            {
+                return _settings.Validation;
+            }
+        }
+
+        public bool Load(string path)
         {
             _logging.Print("Loading settings from " + path);
 
@@ -31,7 +95,7 @@ namespace Couchpotato.Business.Settings
             if (file == null)
             {
                 _logging.Error($"- Couldn't load settingsfile from {path}");
-                return null;
+                return false;
             }
 
             using (var responseReader = new StreamReader(file))
@@ -39,11 +103,8 @@ namespace Couchpotato.Business.Settings
                 var response = responseReader.ReadToEnd();
                 _settings = JsonConvert.DeserializeObject<UserSettings>(response);
 
-                return _settings;
+                return _settings != null;
             }
         }
-
-        public UserSettingsValidation Validation
-        {get { return _settings.Validation; }}
     }
 }
