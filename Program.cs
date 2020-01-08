@@ -13,6 +13,7 @@ using Couchpotato.Business.Cache;
 using Microsoft.Extensions.DependencyInjection;
 using Autofac.Extensions.DependencyInjection;
 using System.Net.Http;
+using System.Reflection;
 
 namespace Couchpotato
 {
@@ -24,9 +25,9 @@ namespace Couchpotato
 
             var services = new ServiceCollection();
             services.AddHttpClient();
-
+            
             var config = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
+            .SetBasePath(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location))
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
             .Build();
 
