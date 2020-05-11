@@ -24,6 +24,13 @@ namespace Couchpotato.Business.Playlist
             for (var i = 1; i < numberOfLines; i = i + 2)
             {
                 var item = file[i];
+                var streamUrl = file[i + 1];
+
+                if (!item.StartsWith("#EXTINF:-1") && !streamUrl.StartsWith("http"))
+                {
+                    i++;
+                    continue;
+                }
 
                 if (!item.StartsWith("#EXTINF:-1"))
                 {
@@ -39,11 +46,11 @@ namespace Couchpotato.Business.Playlist
                     GroupTitle = GetValueForAttribute(item, "group-title"),
                     TvgId = GetValueForAttribute(item, "tvg-id"),
                     TvgLogo = GetValueForAttribute(item, "tvg-logo"),
-                    Url = file[i + 1]
+                    Url = streamUrl
                 };
 
                 streams.Add(tvgName, playlistItem);
-
+                
                 _logging.Progress($"Crunching playlist data", i, numberOfLines - 2);
             }
 
