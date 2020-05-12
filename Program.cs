@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Autofac.Extensions.DependencyInjection;
 using System.Net.Http;
 using System.Reflection;
+using Microsoft.Extensions.Logging;
 
 namespace Couchpotato
 {
@@ -27,16 +28,15 @@ namespace Couchpotato
             services.AddHttpClient();
             
             var config = new ConfigurationBuilder()
-            .SetBasePath(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location))
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-            .Build();
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
 
             var builder = new ContainerBuilder();
             builder.RegisterType<HttpClientWrapper>().As<IHttpClientWrapper>().WithParameter(
                 (p, ctx) => p.ParameterType == typeof(HttpClient),
                 (p, ctx) => ctx.Resolve<IHttpClientFactory>().CreateClient());
 
-            builder.Register(context => config).As<IConfiguration>();
+            builder.Register(context => config.Build()).As<IConfiguration>();
             builder.RegisterType<Application>().As<IApplication>();
             builder.RegisterType<Compression>().As<ICompression>();
             builder.RegisterType<PlaylistProvider>().As<IPlaylistProvider>();

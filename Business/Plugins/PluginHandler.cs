@@ -12,7 +12,7 @@ namespace Couchpotato.Business.Plugins
 {
     public class PluginHandler : IPluginHandler
     {
-        private string _pluginPath = $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}/plugins";
+        private string _pluginPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "plugins");
         private Dictionary<PluginType, List<IPlugin>> _registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
         private readonly ILogging _logging;
         private readonly IConfiguration _configuration;
@@ -55,7 +55,7 @@ namespace Couchpotato.Business.Plugins
             var pluginTypes = new List<Type>();
             
             if(!Directory.Exists(_pluginPath)){
-                _logging.Warn("Plugin folder not found");
+                _logging.Warn($"Plugin folder {_pluginPath} not found");
                 
                 return;
             }
