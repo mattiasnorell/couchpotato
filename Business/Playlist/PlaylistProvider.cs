@@ -175,7 +175,7 @@ namespace Couchpotato.Business.Playlist
 
         public string Save(string path, string fileName, List<PlaylistItem> channels)
         {
-            _logging.Print($"Writing M3U-file to {path}");
+            _logging.Print($"Writing M3U-file to {path}/{fileName}");
 
             var content = new List<string>();
             content.Add("#EXTM3U");

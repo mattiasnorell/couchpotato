@@ -41,6 +41,16 @@ namespace Couchpotato.Business.IO
             return reader.BaseStream;
         }
 
+        public string ReadTextFile(string path){
+            if(string.IsNullOrEmpty(path) || !CheckIfFileExist(path)){
+                return null;
+            }
+
+            using(var sr = new StreamReader(path)){
+                return sr.ReadToEnd();
+            }
+        }
+
         public void WriteStream(string path, Stream stream)
         {
             using (var output = new FileStream(path, FileMode.Create))
@@ -132,6 +142,14 @@ namespace Couchpotato.Business.IO
                 return file;
 
             }
+        }
+
+        public bool CheckIfFileExist(string path){
+            if(String.IsNullOrEmpty(path)){
+                return false;
+            }
+
+            return File.Exists(path);
         }
 
         public bool CheckIfFolderExist(string path, bool create = false)

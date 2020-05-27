@@ -15,20 +15,19 @@ using Autofac.Extensions.DependencyInjection;
 using System.Net.Http;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace Couchpotato
 {
-
     class Program
     {
         static void Main(string[] args)
         {
-
             var services = new ServiceCollection();
             services.AddHttpClient();
             
             var config = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
+            .SetBasePath(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location))
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
 
             var builder = new ContainerBuilder();
