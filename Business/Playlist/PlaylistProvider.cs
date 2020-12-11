@@ -54,17 +54,17 @@ namespace Couchpotato.Business.Playlist
                 playlistGroupItems.AddRange(groupItems);
             }
 
-            if (playlistItems.Count > 0 && _settingsProvider.Validation.SingleEnabled)
+            if (playlistSingleItems.Count > 0 && _settingsProvider.Validation.SingleEnabled)
             {
                 _streamValidator.ValidateStreams(playlistSingleItems, playlistParsed);
             }
 
-            if (playlistItems.Count > 0 && _settingsProvider.Validation.GroupEnabled)
+            if (playlistGroupItems.Count > 0 && _settingsProvider.Validation.GroupEnabled)
             {
                 _streamValidator.ValidateStreams(playlistGroupItems, playlistParsed);
             }
 
-            return playlistItems.AddRange(playlistGroupItems);
+            return playlistSingleItems.AddRange(playlistGroupItems);
         }
 
         private List<PlaylistItem> GetSelectedChannels(Dictionary<string, PlaylistItem> channels)
