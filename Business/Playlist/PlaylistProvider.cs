@@ -64,7 +64,7 @@ namespace Couchpotato.Business.Playlist
                 _streamValidator.ValidateStreams(playlistGroupItems, playlistParsed);
             }
 
-            return playlistSingleItems.AddRange(playlistGroupItems);
+            return playlistSingleItems.Concat(playlistGroupItems).ToList();
         }
 
         private List<PlaylistItem> GetSelectedChannels(Dictionary<string, PlaylistItem> channels)
