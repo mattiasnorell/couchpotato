@@ -10,7 +10,8 @@ namespace Couchpotato.Business.Settings.Models
 
         public UserSettingsValidation()
         {
-            Enabled = false;
+            SingleEnabled = false;
+            GroupEnabled = false;
             ContentTypes = new string[] { };
             ShowInvalid = false;
         }
