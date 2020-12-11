@@ -15,7 +15,8 @@ namespace Couchpotato.Business.Settings.Models
             ShowInvalid = false;
         }
 
-        public bool Enabled { get; set; }
+        public bool SingleEnabled { get; set; }
+        public bool GroupEnabled { get; set; }
         public string[] ContentTypes { get; set; }
         public bool ShowInvalid { get; set; }
         public string InvalidSufix { get; set; }

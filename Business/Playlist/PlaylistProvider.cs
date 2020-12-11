@@ -39,26 +39,32 @@ namespace Couchpotato.Business.Playlist
         {
             var playlistFile = Load(_settingsProvider.Source);
             var playlistParsed = _playlistParser.Parse(playlistFile);
-            var playlistItems = new List<PlaylistItem>();
+            var playlistSingleItems = new List<PlaylistItem>();
+            var playlistGroupItems = new List<PlaylistItem>();
 
             if (_settingsProvider.Streams.Any())
             {
                 var items = GetSelectedChannels(playlistParsed);
-                playlistItems.AddRange(items);
+                playlistSingleItems.AddRange(items);
             }
 
             if (_settingsProvider.Groups.Any())
             {
                 var groupItems = GetSelectedGroups(playlistParsed);
-                playlistItems.AddRange(groupItems);
+                playlistGroupItems.AddRange(groupItems);
             }
 
-            if (playlistItems.Count > 0 && _settingsProvider.Validation.Enabled)
+            if (playlistItems.Count > 0 && _settingsProvider.Validation.SingleEnabled)
             {
-                _streamValidator.ValidateStreams(playlistItems, playlistParsed);
+                _streamValidator.ValidateStreams(playlistSingleItems, playlistParsed);
             }
 
-            return playlistItems;
+            if (playlistItems.Count > 0 && _settingsProvider.Validation.GroupEnabled)
+            {
+                _streamValidator.ValidateStreams(playlistGroupItems, playlistParsed);
+            }
+
+            return playlistItems.AddRange(playlistGroupItems);
         }
 
         private List<PlaylistItem> GetSelectedChannels(Dictionary<string, PlaylistItem> channels)
@@ -76,7 +82,7 @@ namespace Couchpotato.Business.Playlist
                 }
                 else
                 {
-                    if (_settingsProvider.Validation.Enabled)
+                    if (_settingsProvider.Validation.SingleEnabled)
                     {
                         var fallbackStream = _streamValidator.GetSourceFallback(channel.ChannelId, channels);
 
