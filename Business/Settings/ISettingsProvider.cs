@@ -9,6 +9,7 @@ namespace Couchpotato.Business.Settings
         string Source { get; }
         string DefaultGroup { get; }
         string OutputPath { get; }
+        string OutputFilename { get; }
         bool Compress { get; }
         List<UserSettingsStream> Streams { get; }
         List<UserSettingsGroup> Groups { get; }
