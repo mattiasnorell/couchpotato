@@ -114,8 +114,8 @@ namespace Couchpotato
                 return;
             }
 
-            var outputFilenameM3u = _settingsProvider.outputFilename ?? "channels";
-            var outputFilenameEpg = _settingsProvider.outputFilename ?? "epg";
+            var outputFilenameM3u = _settingsProvider.OutputFilename ?? "channels";
+            var outputFilenameEpg = _settingsProvider.OutputFilename ?? "epg";
             var outputM3uPath = _playlistProvider.Save(outputPath, outputFilenameM3u + ".m3u", channelResult);
             var outputEpgPath = _epgProvider.Save(outputPath, outputFilenameEpg + ".xml", epgFile);
 

@@ -51,7 +51,7 @@ namespace Couchpotato.Business.Settings
         {
             get
             {
-                return _settings.OutputName;
+                return _settings.OutputFilename ?? null;
             }
         }
 
