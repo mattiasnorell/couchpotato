@@ -47,6 +47,14 @@ namespace Couchpotato.Business.Settings
             }
         }
 
+        public string OutputFilename
+        {
+            get
+            {
+                return _settings.OutputName;
+            }
+        }
+
         public bool Compress
         {
             get
