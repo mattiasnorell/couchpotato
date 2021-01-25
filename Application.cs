@@ -93,7 +93,7 @@ namespace Couchpotato
 
             _pluginHandler.Run(PluginType.BeforeChannel);
             var channelResult = _playlistProvider.GetPlaylist();
-            _pluginHandler.Run(PluginType.AfterChannel);
+            _pluginHandler.Run(PluginType.AfterChannel, channelResult);
             
             if (!channelResult.Any())
             {
