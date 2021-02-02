@@ -2,7 +2,7 @@
 
 namespace Couchpotato.Business{
     public interface IEpgProvider{
-        EpgList GetProgramGuide(string[] paths);
+        EpgResult GetProgramGuide(string[] paths);
         string Save(string path, string fileName, EpgList epgList);
     }
 }

@@ -37,6 +37,7 @@ namespace Couchpotato.Business.Playlist
 
         public List<PlaylistItem> GetPlaylist()
         {
+            var result = new PlaylistResult();
             var playlistFile = Load(_settingsProvider.Source);
             var playlistParsed = _playlistParser.Parse(playlistFile);
             var playlistSingleItems = new List<PlaylistItem>();
@@ -54,9 +55,9 @@ namespace Couchpotato.Business.Playlist
                 playlistGroupItems.AddRange(groupItems);
             }
 
-            if (playlistSingleItems.Count > 0 && _settingsProvider.Validation.SingleEnabled)
+            if (playlistSingleItems.Items.Count > 0 && _settingsProvider.Validation.SingleEnabled)
             {
-                _streamValidator.ValidateStreams(playlistSingleItems, playlistParsed);
+                _streamValidator.ValidateStreams(playlistSingleItems.Items, playlistParsed);
             }
 
             if (playlistGroupItems.Count > 0 && _settingsProvider.Validation.GroupEnabled)
@@ -64,13 +65,14 @@ namespace Couchpotato.Business.Playlist
                 _streamValidator.ValidateStreams(playlistGroupItems, playlistParsed);
             }
 
-            return playlistSingleItems.Concat(playlistGroupItems).ToList();
+            return playlistSingleItems.Items.Concat(playlistGroupItems).ToList();
         }
 
-        private List<PlaylistItem> GetSelectedChannels(Dictionary<string, PlaylistItem> channels)
+        private PlaylistResult GetSelectedChannels(Dictionary<string, PlaylistItem> channels)
         {
             var streams = new List<PlaylistItem>();
             var brokenStreams = new List<String>();
+            var result = new PlaylistResult();
 
             foreach (var channel in _settingsProvider.Streams)
             {
@@ -88,7 +90,7 @@ namespace Couchpotato.Business.Playlist
 
                         if (fallbackStream == null)
                         {
-                            brokenStreams.Add(channel.ChannelId);
+                            brokenStreams.Add(channel);
                             continue;
                         }
 
@@ -98,7 +100,7 @@ namespace Couchpotato.Business.Playlist
                     }
                     else
                     {
-                        brokenStreams.Add(channel.ChannelId);
+                        brokenStreams.Add(channel);
                     }
                 }
             }
@@ -109,11 +111,13 @@ namespace Couchpotato.Business.Playlist
 
                 foreach (var brokenStream in brokenStreams)
                 {
-                    _logging.Warn($"- {brokenStream }");
+                    result.Missing.Add(brokenStream);
+                    _logging.Warn($"- {brokenStream.ChannelId }");
                 }
             }
 
-            return streams;
+            result.Items = streams;
+            return result;
         }
 
 

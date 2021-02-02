@@ -125,10 +125,11 @@ namespace Couchpotato.Business
             };
         }
 
-        private EpgList Filter(EpgList input)
+        private EpgResult Filter(EpgList input)
         {
             var i = 0;
             var channelCount = _settingsProvider.Streams.Count;
+            var result = new EpgResult();
             var epgFile = new EpgList()
             {
                 GeneratorInfoName = "",
@@ -137,7 +138,7 @@ namespace Couchpotato.Business
                 Programs = new List<EpgProgram>()
             };
 
-            var missingChannels = new List<UserSettingsStream>();
+            var streamsWithoutEpg = new List<UserSettingsStream>();
 
             foreach (var settingsChannel in _settingsProvider.Streams)
             {
@@ -179,17 +180,20 @@ namespace Couchpotato.Business
                 }
             }
 
-            if (missingChannels.Any())
+            if (streamsWithoutEpg.Any())
             {
                 _logging.Warn($"Couldn't find EPG for:");
 
-                foreach (var missingChannel in missingChannels)
+                foreach (var streamWithoutEpg in streamsWithoutEpg)
                 {
-                    _logging.Warn($"- { missingChannel.FriendlyName}");
+                    result.StreamsWithoutEpg.Add(streamWithoutEpg.ChannelId);
+                    _logging.Warn($"- { streamWithoutEpg.FriendlyName}");
                 }
             }
 
-            return epgFile;
+            result.Epg = epgList;
+            
+            return result;
         }
 
         private string AddTimeshift(string time, string timeshift)

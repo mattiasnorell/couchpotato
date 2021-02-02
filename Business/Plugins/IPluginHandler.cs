@@ -8,6 +8,6 @@ namespace Couchpotato.Business.Plugins
     public interface IPluginHandler
     {
         void Register();
-        void Run(PluginType pluginType, List<PlaylistItem> playlistItems = null, EpgList epg = null);
+        void Run(PluginType pluginType, PlaylistResult playlist = null, EpgResult epg = null);
     }
 }

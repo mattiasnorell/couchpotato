@@ -52,7 +52,7 @@ namespace Couchpotato.Business.Plugins {
             }
         }
 
-        public void Run (PluginType pluginType, List<PlaylistItem> playlistItems = null, EpgList programGuide = null) {
+        public void Run (PluginType pluginType, PlaylistResult playlist = null, EpgResult epg = null) {
             if (!_registeredPlugins.ContainsKey (pluginType)) {
                 return;
             }
@@ -62,7 +62,7 @@ namespace Couchpotato.Business.Plugins {
             foreach (var plugin in _registeredPlugins[pluginType]) {
                 try {
                     _logging.Info ($"- {plugin.GetType().Name}");
-                    plugin.Run (playlistItems, programGuide);
+                    plugin.Run (playlist, epg);
                 } catch (Exception e) {
                     _logging.Error ($"Error running plugin {plugin.GetType().Name}", e);
                 }

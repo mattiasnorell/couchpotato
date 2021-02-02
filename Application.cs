@@ -103,8 +103,8 @@ namespace Couchpotato
             }
 
             _pluginHandler.Run(PluginType.BeforeEpg, channelResult);
-            var epgFile = _epgProvider.GetProgramGuide(_settingsProvider.Epg.Paths);
-            _pluginHandler.Run(PluginType.AfterEpg, channelResult, epgFile);
+            var epgResult = _epgProvider.GetProgramGuide(_settingsProvider.Epg.Paths);
+            _pluginHandler.Run(PluginType.AfterEpg, channelResult, epgResult);
 
             var outputPath = _settingsProvider.OutputPath ?? "./";
             var folderExist = _fileHandler.CheckIfFolderExist(outputPath, true);
@@ -117,8 +117,8 @@ namespace Couchpotato
 
             var outputFilenameM3u = _settingsProvider.OutputFilename ?? "channels";
             var outputFilenameEpg = _settingsProvider.OutputFilename ?? "epg";
-            var outputM3uPath = _playlistProvider.Save(outputPath, outputFilenameM3u + ".m3u", channelResult);
-            var outputEpgPath = _epgProvider.Save(outputPath, outputFilenameEpg + ".xml", epgFile);
+            var outputM3uPath = _playlistProvider.Save(outputPath, outputFilenameM3u + ".m3u", channelResult.Items);
+            var outputEpgPath = _epgProvider.Save(outputPath, outputFilenameEpg + ".xml", epgResult.Items);
 
 
             if (_settingsProvider.Compress)

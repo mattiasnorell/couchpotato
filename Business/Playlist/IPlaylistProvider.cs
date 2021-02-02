@@ -4,7 +4,7 @@ using Couchpotato.Core.Playlist;
 
 namespace Couchpotato.Business.Playlist{
     public interface IPlaylistProvider{
-        List<PlaylistItem> GetPlaylist();
+        PlaylistResult GetPlaylist();
         string Save(string path, string fileName, List<PlaylistItem> channels);
     }
 }
