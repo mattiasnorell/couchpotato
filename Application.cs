@@ -95,7 +95,7 @@ namespace Couchpotato
             var channelResult = _playlistProvider.GetPlaylist();
             _pluginHandler.Run(PluginType.AfterChannel, channelResult);
             
-            if (!channelResult.Any())
+            if (!channelResult.Items.Any())
             {
                 _logging.Info($"\nNo channels found so no reason to continue. Bye bye.");
 

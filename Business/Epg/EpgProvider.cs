@@ -32,7 +32,7 @@ namespace Couchpotato.Business
             _settingsProvider = settingsProvider;
         }
 
-        public EpgList GetProgramGuide(string[] paths)
+        public EpgResult GetProgramGuide(string[] paths)
         {
             var loadedEpgLists = Load(paths);
             var filteredEpgList = Filter(loadedEpgLists);
@@ -150,7 +150,7 @@ namespace Couchpotato.Business
 
                 if (channel == null)
                 {
-                    missingChannels.Add(settingsChannel);
+                    streamsWithoutEpg.Add(settingsChannel);
                     continue;
                 }
 
@@ -191,7 +191,7 @@ namespace Couchpotato.Business
                 }
             }
 
-            result.Epg = epgList;
+            result.Items = epgFile;
             
             return result;
         }
