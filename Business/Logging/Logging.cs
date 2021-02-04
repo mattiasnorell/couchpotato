@@ -1,9 +1,12 @@
 using System;
 
 namespace Couchpotato.Business.Logging {
+
+    private readonly IConfiguration _configuration;
+    
     public class Logging : ILogging
     {
-        public Logging(){
+        public Logging(IConfiguration configuration,){
 
         }
         
@@ -43,6 +46,12 @@ namespace Couchpotato.Business.Logging {
         }
 
         public void Progress(string message, int index, int max){
+
+            var verboseLogging = _configuration.GetSection ($"consoleOutput")?.Value;
+            if (string.IsNullOrEmpty (verboseLogging) || verboseLogging != "verbose") {
+                return;
+            }
+
             Console.ForegroundColor = ConsoleColor.White;
             PrintSameLine($"{message}: {((decimal)index / (decimal)max).ToString("0%")}");
 

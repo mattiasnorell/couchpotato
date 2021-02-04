@@ -20,6 +20,7 @@ namespace Couchpotato.Business.Playlist
         {
             var streams = new Dictionary<string, PlaylistItem>();
             var numberOfLines = file.Length;
+            _logging.Print($"Crunching playlist data");
 
             for (var i = 1; i < numberOfLines; i = i + 2)
             {
@@ -51,7 +52,7 @@ namespace Couchpotato.Business.Playlist
 
                 streams.Add(tvgName, playlistItem);
                 
-                _logging.Progress($"Crunching playlist data", i, numberOfLines - 2);
+                   _logging.Progress($"Crunching playlist data", i, numberOfLines - 2);
             }
 
             return streams;
