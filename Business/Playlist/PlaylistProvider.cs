@@ -53,7 +53,7 @@ namespace Couchpotato.Business.Playlist
             if (_settingsProvider.Groups.Any())
             {
                 var groupItems = GetSelectedGroups(playlistParsed);
-                playlistGroupItems.AddRange(groupItems);
+                result.Items.AddRange(groupItems);
             }
 
             if (playlistSingleItems.Count > 0 && _settingsProvider.Validation.SingleEnabled)
@@ -65,8 +65,6 @@ namespace Couchpotato.Business.Playlist
             {
                 _streamValidator.ValidateStreams(playlistGroupItems, playlistParsed);
             }
-
-            result.Items.AddRange(playlistGroupItems).ToList();
 
             return result;
         }
@@ -128,8 +126,10 @@ namespace Couchpotato.Business.Playlist
         {
             var streams = new List<PlaylistItem>();
 
+            _logging.info("Adding groups");
             foreach (var group in _settingsProvider.Groups)
             {
+                _logging.info("Adding group " + group.GroupId);
                 var groupItems = playlistItems?.Values.Where(e => e.GroupTitle == group.GroupId).ToList();
 
                 if (groupItems == null || !groupItems.Any())
@@ -139,6 +139,8 @@ namespace Couchpotato.Business.Playlist
 
                 foreach (var groupItem in groupItems)
                 {
+
+                    _logging.info("Adding group item " + groupItem.TvgName);
                     if (group.Exclude != null && group.Exclude.Any(e => e == groupItem.TvgName))
                     {
                         continue;
