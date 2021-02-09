@@ -45,15 +45,15 @@ namespace Couchpotato.Business.Playlist
 
             if (_settingsProvider.Streams.Any())
             {
-                var selected = GetSelectedChannels(playlistParsed);
-                result.Items.AddRange(selected.Items);
-                result.Missing.AddRange(selected.Missing);
+                var singleItems = GetSelectedChannels(playlistParsed);
+                playlistSingleItems.AddRange(singleItems.Items);
+                result.Missing.AddRange(singleItems.Missing);
             }
 
             if (_settingsProvider.Groups.Any())
             {
                 var groupItems = GetSelectedGroups(playlistParsed);
-                result.Items.AddRange(groupItems);
+                playlistGroupItems.AddRange(groupItems);
             }
 
             if (playlistSingleItems.Count > 0 && _settingsProvider.Validation.SingleEnabled)
@@ -65,6 +65,9 @@ namespace Couchpotato.Business.Playlist
             {
                 _streamValidator.ValidateStreams(playlistGroupItems, playlistParsed);
             }
+
+            result.Items.AddRange(playlistSingleItems);
+            result.Items.AddRange(playlistGroupItems);
 
             return result;
         }
@@ -126,10 +129,10 @@ namespace Couchpotato.Business.Playlist
         {
             var streams = new List<PlaylistItem>();
 
-            _logging.info("Adding groups");
+            _logging.Info("Adding groups");
             foreach (var group in _settingsProvider.Groups)
             {
-                _logging.info("Adding group " + group.GroupId);
+                _logging.Info("Adding group " + group.GroupId);
                 var groupItems = playlistItems?.Values.Where(e => e.GroupTitle == group.GroupId).ToList();
 
                 if (groupItems == null || !groupItems.Any())
@@ -140,9 +143,10 @@ namespace Couchpotato.Business.Playlist
                 foreach (var groupItem in groupItems)
                 {
 
-                    _logging.info("Adding group item " + groupItem.TvgName);
+                    _logging.Info("Adding group item " + groupItem.TvgName);
                     if (group.Exclude != null && group.Exclude.Any(e => e == groupItem.TvgName))
                     {
+                        _logging.Info("Not found group item " + groupItem.TvgName);
                         continue;
                     }
 
