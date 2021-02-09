@@ -129,10 +129,8 @@ namespace Couchpotato.Business.Playlist
         {
             var streams = new List<PlaylistItem>();
 
-            _logging.Info("Adding groups");
             foreach (var group in _settingsProvider.Groups)
             {
-                _logging.Info("Adding group " + group.GroupId);
                 var groupItems = playlistItems?.Values.Where(e => e.GroupTitle == group.GroupId).ToList();
 
                 if (groupItems == null || !groupItems.Any())
@@ -143,10 +141,8 @@ namespace Couchpotato.Business.Playlist
                 foreach (var groupItem in groupItems)
                 {
 
-                    _logging.Info("Adding group item " + groupItem.TvgName);
                     if (group.Exclude != null && group.Exclude.Any(e => e == groupItem.TvgName))
                     {
-                        _logging.Info("Not found group item " + groupItem.TvgName);
                         continue;
                     }
 
