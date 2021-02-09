@@ -66,7 +66,7 @@ namespace Couchpotato.Business.Playlist
                 _streamValidator.ValidateStreams(playlistGroupItems, playlistParsed);
             }
 
-            result.Items.Concat(playlistGroupItems).ToList();
+            result.Items.AddRange(playlistGroupItems).ToList();
 
             return result;
         }
