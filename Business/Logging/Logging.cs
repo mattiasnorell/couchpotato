@@ -1,13 +1,14 @@
 using System;
+using Microsoft.Extensions.Configuration;
 
 namespace Couchpotato.Business.Logging {
 
-    private readonly IConfiguration _configuration;
-    
     public class Logging : ILogging
     {
-        public Logging(IConfiguration configuration,){
+        private readonly IConfiguration _configuration;
 
+        public Logging(IConfiguration configuration){
+            _configuration = configuration;
         }
         
         public void PrintSameLine(string message){
