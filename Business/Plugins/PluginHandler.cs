@@ -129,6 +129,10 @@ namespace Couchpotato.Business.Plugins {
 
                 _logging.Info ($"PluginHandler :: Loaded {type.Name}");
             }
+
+            foreach(KeyValuePair<PluginType, List<IPlugin>> pluginCategory in _registeredPlugins){
+                pluginCategory.Value.OrderBy(plugin => plugin, new PriorityComparer());
+            }
         }
 
         private Dictionary<string, object> GetSettings (string key) {
@@ -146,6 +150,15 @@ namespace Couchpotato.Business.Plugins {
             }
 
             return pluginSettings;
+        }
+    }
+
+    public class PriorityComparer: IComparer<IPlugin>{
+        public int Compare(IPlugin? x, IPlugin? y){
+            var attributeX = (CouchpotatoPluginAttribute) x.GetCustomAttribute (typeof (CouchpotatoPluginAttribute), false);
+            var attributeY = (CouchpotatoPluginAttribute) y.GetCustomAttribute (typeof (CouchpotatoPluginAttribute), false);
+
+            return x.Priority < y.Priority ? -1 : 1;
         }
     }
 }
