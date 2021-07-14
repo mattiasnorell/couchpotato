@@ -1,6 +1,7 @@
 using Couchpotato.Business.Settings;
 using Couchpotato.Business.Settings.Models;
 using Couchpotato.Core.Playlist;
+using System;
 
 namespace Couchpotato.Business.Playlist
 {
