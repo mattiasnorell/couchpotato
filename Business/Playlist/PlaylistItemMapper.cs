@@ -19,7 +19,7 @@ namespace Couchpotato.Business.Playlist
                 TvgId = stream.EpgId ?? playlistItem.TvgId,
                 TvgLogo = stream.CustomLogo ?? playlistItem.TvgLogo,
                 Url = playlistItem.Url,
-                HasCustomLogo = stream.CustomLogo && playlistItem.TvgLogo && stream.CustomLogo != playlistItem.TvgLogo
+                HasCustomLogo = !string.IsNullOrEmpty(stream.CustomLogo) && !string.IsNullOrEmpty(playlistItem.TvgLogo) && stream.CustomLogo != playlistItem.TvgLogo
             };
 
             if (!string.IsNullOrEmpty(stream.CustomGroupName) || !string.IsNullOrEmpty(_settingsProvider.DefaultGroup))
