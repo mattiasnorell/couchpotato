@@ -9,7 +9,7 @@ namespace Couchpotato.Business.Cache
 {
     public class CacheProvider : ICacheProvider
     {
-        private string _cachePath = $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}/cache";
+        private string _cachePath = $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}\\cache";
         private readonly IFileHandler _fileHandler;
 
         public CacheProvider(IFileHandler fileHandler)

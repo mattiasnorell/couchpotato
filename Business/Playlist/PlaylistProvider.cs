@@ -171,7 +171,7 @@ namespace Couchpotato.Business.Playlist
         private string[] Load(string path)
         {
 
-            var cacheResult = _cacheProvider.Get(path, this._settingsProvider.PlaylistCacheDuration);
+            var cacheResult = _cacheProvider.Get(path, _settingsProvider.PlaylistCacheDuration);
             if (cacheResult != null)
             {
                 _logging.Print("- Loaded playlist from cache");
@@ -179,10 +179,9 @@ namespace Couchpotato.Business.Playlist
             }
 
             var downloadResult = _fileHandler.GetSource(path);
-
             if (downloadResult != null)
             {
-                _logging.Print("- Download playlist from {path}");
+                _logging.Print($"- Download playlist from {path}");
                 _cacheProvider.Set(path, downloadResult);
                 return streamToArray(downloadResult);
             }
@@ -194,6 +193,8 @@ namespace Couchpotato.Business.Playlist
 
         private string[] streamToArray(Stream stream)
         {
+            stream.Seek(0, SeekOrigin.Begin);
+
             using (var sr = new StreamReader(stream))
             {
                 string line;
