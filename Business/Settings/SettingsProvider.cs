@@ -94,6 +94,14 @@ namespace Couchpotato.Business.Settings
             }
         }
 
+        public int PlaylistCacheDuration
+        {
+            get
+            {
+                return _settings.PlaylistCacheDuration;
+            }
+        }
+
         public bool Load(string path)
         {
             _logging.Print("Loading settings from " + path);

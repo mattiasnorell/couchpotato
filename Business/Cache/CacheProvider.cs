@@ -22,6 +22,11 @@ namespace Couchpotato.Business.Cache
             var keyHash = CreateMD5(key);
             var filePath = _fileHandler.GetFilePath(_cachePath, keyHash);
 
+            if (!_fileHandler.FileExists(filePath))
+            {
+                return null;
+            }
+
             if(_fileHandler.GetModifiedDate(filePath) < DateTime.Now.AddHours(-timespan)){
                 return null;
             }

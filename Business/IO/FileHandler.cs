@@ -35,6 +35,11 @@ namespace Couchpotato.Business.IO
             return Path.Combine(path, fileName);
         }
 
+        public bool FileExists(string path)
+        {
+            return File.Exists(path);
+        }
+
         public Stream ReadStream(string path)
         {
             var reader = new StreamReader(new FileStream(path, FileMode.Open), Encoding.UTF8);

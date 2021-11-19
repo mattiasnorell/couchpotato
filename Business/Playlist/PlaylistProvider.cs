@@ -7,6 +7,7 @@ using Couchpotato.Core.Playlist;
 using Couchpotato.Business.IO;
 using Couchpotato.Business.Settings;
 using System.IO;
+using Couchpotato.Business.Cache;
 
 namespace Couchpotato.Business.Playlist
 {
@@ -18,6 +19,7 @@ namespace Couchpotato.Business.Playlist
         private readonly IPlaylistParser _playlistParser;
         private readonly IPlaylistItemMapper _playlistItemMapper;
         private readonly ISettingsProvider _settingsProvider;
+        private readonly ICacheProvider _cacheProvider;
 
         public PlaylistProvider(
             IFileHandler fileHandler,
@@ -25,7 +27,8 @@ namespace Couchpotato.Business.Playlist
             ILogging logging,
             IPlaylistParser playlistParser,
             IPlaylistItemMapper playlistItemMapper,
-            ISettingsProvider settingsProvider)
+            ISettingsProvider settingsProvider,
+            ICacheProvider cacheProvider)
         {
             _fileHandler = fileHandler;
             _streamValidator = streamValidator;
@@ -33,6 +36,8 @@ namespace Couchpotato.Business.Playlist
             _playlistParser = playlistParser;
             _playlistItemMapper = playlistItemMapper;
             _settingsProvider = settingsProvider;
+            _cacheProvider = cacheProvider;
+
         }
 
         public PlaylistResult GetPlaylist()
@@ -165,14 +170,25 @@ namespace Couchpotato.Business.Playlist
 
         private string[] Load(string path)
         {
-            _logging.Print("Loading channel list");
-            var result = _fileHandler.GetSource(path);
+            _logging.Print("Loading playlist");
+            var result = _cacheProvider.Get(path, this._settingsProvider.PlaylistCacheDuration);
+
+            if(result == null)
+            {
+                result = _fileHandler.GetSource(path);
+            }
+            else
+            {
+                _logging.Print("Loaded playlist from cache");
+            }
 
             if (result == null)
             {
                 _logging.Error($"- Couldn't download file {path}");
                 return new string[] { };
             }
+
+            _cacheProvider.Set(path, result);
 
             using (var sr = new StreamReader(result))
             {

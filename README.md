@@ -18,6 +18,7 @@ Customize and aggregate M3U and EPG files
 {
     "outputPath": "Relative or absolute path to output folder",
     "m3uPath": "Path to m3u source",
+    "m3uCacheDuration": 1,
     "epg" : {
         "cache": {
             "enabled": true,

@@ -9,11 +9,13 @@ namespace Couchpotato.Business.Settings.Models
         public UserSettings()
         {
             this.Validation = new UserSettingsValidation();
+            this.PlaylistCacheDuration = 0;
         }
 
         public string OutputPath { get; set; }
         public string OutputFilename { get; set; }
         public string M3uPath { get; set; }
+        public int PlaylistCacheDuration { get; set; }
         public bool Compress { get; set; }
         public UserSettingsValidation Validation { get; set; }
         public UserSettingsEpg Epg { get; set; }

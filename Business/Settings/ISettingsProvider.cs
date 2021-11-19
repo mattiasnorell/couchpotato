@@ -11,6 +11,7 @@ namespace Couchpotato.Business.Settings
         string OutputPath { get; }
         string OutputFilename { get; }
         bool Compress { get; }
+        int PlaylistCacheDuration { get; }
         List<UserSettingsStream> Streams { get; }
         List<UserSettingsGroup> Groups { get; }
         UserSettingsValidation Validation { get; }

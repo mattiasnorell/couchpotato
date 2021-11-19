@@ -15,5 +15,6 @@ namespace Couchpotato.Business.IO
         string GetFilePath(string path, string fileName);
         bool CheckIfFileExist(string path);
         DateTime GetModifiedDate(string path);
+        bool FileExists(string path);
     }
 }
