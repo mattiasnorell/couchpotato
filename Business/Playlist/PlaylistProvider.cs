@@ -170,27 +170,31 @@ namespace Couchpotato.Business.Playlist
 
         private string[] Load(string path)
         {
-            _logging.Print("Loading playlist");
-            var result = _cacheProvider.Get(path, this._settingsProvider.PlaylistCacheDuration);
 
-            if(result == null)
+            var cacheResult = _cacheProvider.Get(path, this._settingsProvider.PlaylistCacheDuration);
+            if (cacheResult != null)
             {
-                result = _fileHandler.GetSource(path);
-            }
-            else
-            {
-                _logging.Print("Loaded playlist from cache");
+                _logging.Print("- Loaded playlist from cache");
+                return streamToArray(cacheResult);
             }
 
-            if (result == null)
+            var downloadResult = _fileHandler.GetSource(path);
+
+            if (downloadResult != null)
             {
-                _logging.Error($"- Couldn't download file {path}");
-                return new string[] { };
+                _logging.Print("- Download playlist from {path}");
+                _cacheProvider.Set(path, downloadResult);
+                return streamToArray(downloadResult);
             }
 
-            _cacheProvider.Set(path, result);
 
-            using (var sr = new StreamReader(result))
+            _logging.Error($"- Couldn't download file {path}");
+            return new string[] { };
+        }
+
+        private string[] streamToArray(Stream stream)
+        {
+            using (var sr = new StreamReader(stream))
             {
                 string line;
                 var list = new List<string>();
