@@ -12,17 +12,16 @@ using Couchpotato.Business.Cache;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
 using System.Reflection;
-using Microsoft.Extensions.Logging;
 using System;
 
 namespace Couchpotato
 {
-    class Program
+    internal abstract class Program
     {
         private static void Main(string[] args)
         {
             var config = new ConfigurationBuilder()
-                .SetBasePath(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location))
+                .SetBasePath(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location) ?? throw new InvalidOperationException())
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
             
             var services = new ServiceCollection()
