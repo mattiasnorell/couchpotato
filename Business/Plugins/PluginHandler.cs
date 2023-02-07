@@ -52,7 +52,7 @@ namespace Couchpotato.Business.Plugins
 
             var config = _fileHandler.ReadTextFile(pluginConfigPath);
 
-            return config != null ? JsonConvert.DeserializeObject<dynamic>(config) : null;
+            return config != null ? JsonConvert.DeserializeObject<dynamic>(config) : new Dictionary<string, dynamic>();
         }
 
         public void Run(PluginType pluginType, PlaylistResult playlist = null, EpgResult epg = null)
