@@ -46,23 +46,22 @@ namespace Couchpotato.Business.IO
             return reader.BaseStream;
         }
 
-        public string ReadTextFile(string path){
-            if(string.IsNullOrEmpty(path) || !CheckIfFileExist(path)){
+        public string ReadTextFile(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !CheckIfFileExist(path))
+            {
                 return null;
             }
 
-            using(var sr = new StreamReader(path)){
-                return sr.ReadToEnd();
-            }
+            using var sr = new StreamReader(path);
+            return sr.ReadToEnd();
         }
 
         public void WriteStream(string path, Stream stream)
         {
-            using (var output = new FileStream(path, FileMode.Create))
-            {
-                stream.Seek(0, SeekOrigin.Begin);
-                stream.CopyTo(output);
-            }
+            using var output = new FileStream(path, FileMode.Create);
+            stream.Seek(0, SeekOrigin.Begin);
+            stream.CopyTo(output);
         }
 
         public string WriteXmlFile<T>(string path, string fileName, T content)
@@ -83,12 +82,10 @@ namespace Couchpotato.Business.IO
         {
             var outputPath = GetFilePath(path, fileName);
 
-            using (var writeFile = new StreamWriter(outputPath, false, new UTF8Encoding(true)))
+            using var writeFile = new StreamWriter(outputPath, false, new UTF8Encoding(true));
+            foreach (var row in content)
             {
-                foreach (string row in content)
-                {
-                    writeFile.WriteLine(row);
-                }
+                writeFile.WriteLine(row);
             }
 
             return outputPath;
@@ -125,7 +122,6 @@ namespace Couchpotato.Business.IO
                 }
 
                 return file;
-
             }
             else
             {
@@ -138,40 +134,31 @@ namespace Couchpotato.Business.IO
 
                 var file = new FileStream(path, FileMode.Open);
 
-                if (path.EndsWith(".gz"))
-                {
-                    _logging.Print($"- Decompressed file");
-                    return _compression.Decompress(file);
-                }
-
-                return file;
-
+                if (!path.EndsWith(".gz")) return file;
+                _logging.Print($"- Decompressed file");
+                return _compression.Decompress(file);
             }
         }
 
-        public bool CheckIfFileExist(string path){
-            if(String.IsNullOrEmpty(path)){
-                return false;
-            }
-
-            return File.Exists(path);
+        public bool CheckIfFileExist(string path)
+        {
+            return !string.IsNullOrEmpty(path) && File.Exists(path);
         }
 
         public bool CheckIfFolderExist(string path, bool create = false)
         {
-            if (!Directory.Exists(path))
+            if (Directory.Exists(path)) return true;
+
+            if (!create) return false;
+
+            if (path == null)
             {
-
-                if (create)
-                {
-                    _logging.Info($"Couldn't find output folder, creating it at {path}!");
-                    Directory.CreateDirectory(path);
-                    return true;
-                }
-
+                _logging.Info($"Couldn't create folder, path not set");
                 return false;
             }
 
+            _logging.Info($"Couldn't find output folder, creating it at {path}!");
+            Directory.CreateDirectory(path);
             return true;
         }
     }

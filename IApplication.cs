@@ -1,3 +1,3 @@
 public interface IApplication{
-    void Run(Autofac.IContainer container, string[] args);
+    void Run(string[] args);
 }

@@ -1,4 +1,3 @@
-
 using System;
 using System.Linq;
 using Couchpotato.Business;
@@ -9,11 +8,10 @@ using Couchpotato.Business.Plugins;
 using Couchpotato.Core.Plugins;
 using Couchpotato.Business.Settings;
 using Couchpotato.Business.IO;
-using Autofac;
 
 namespace Couchpotato
 {
-    class Application : IApplication
+    internal class Application : IApplication
     {
         private readonly ISettingsProvider _settingsProvider;
         private readonly IPlaylistProvider _playlistProvider;
@@ -42,9 +40,8 @@ namespace Couchpotato
             _fileHandler = fileHandler;
         }
 
-        public void Run(IContainer container, string[] settingsPaths)
+        public void Run(string[] settingsPaths)
         {
-
             if (settingsPaths == null || settingsPaths.Length == 0)
             {
                 _logging.Error($"No settings file(s) found. Please fix.");
@@ -60,17 +57,14 @@ namespace Couchpotato
 
             foreach (var path in settingsPaths)
             {
-                using (var scope = container.BeginLifetimeScope())
+                if (string.IsNullOrEmpty(path) || !path.ToLower().Contains(".json"))
                 {
-                    if (string.IsNullOrEmpty(path) || !path.ToLower().Contains(".json"))
-                    {
-                        _logging.Error($"Settings parameter \"{path}\" isn't valid.");
+                    _logging.Error($"Settings parameter \"{path}\" isn't valid.");
 
-                        continue;
-                    }
-
-                    Create(path);
+                    continue;
                 }
+
+                Create(path);
             }
 
             var endTime = DateTime.Now;
@@ -94,7 +88,7 @@ namespace Couchpotato
             _pluginHandler.Run(PluginType.BeforeChannel);
             var channelResult = _playlistProvider.GetPlaylist();
             _pluginHandler.Run(PluginType.AfterChannel, channelResult);
-            
+
             if (!channelResult.Items.Any())
             {
                 _logging.Info($"\nNo channels found so no reason to continue. Bye bye.");
@@ -115,15 +109,15 @@ namespace Couchpotato
                 return;
             }
 
-            var outputFilenameM3u = _settingsProvider.OutputFilename ?? "channels";
+            var outputFilenameM3U = _settingsProvider.OutputFilename ?? "channels";
             var outputFilenameEpg = _settingsProvider.OutputFilename ?? "epg";
-            var outputM3uPath = _playlistProvider.Save(outputPath, outputFilenameM3u + ".m3u", channelResult.Items);
+            var outputM3UPath = _playlistProvider.Save(outputPath, outputFilenameM3U + ".m3u", channelResult.Items);
             var outputEpgPath = _epgProvider.Save(outputPath, outputFilenameEpg + ".xml", epgResult.Items);
 
 
             if (_settingsProvider.Compress)
             {
-                _compression.Compress(outputM3uPath);
+                _compression.Compress(outputM3UPath);
                 _compression.Compress(outputEpgPath);
             }
         }

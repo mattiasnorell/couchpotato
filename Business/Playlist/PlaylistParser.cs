@@ -58,16 +58,11 @@ namespace Couchpotato.Business.Playlist
             return streams;
         }
 
-        private string GetValueForAttribute(string item, string attributeName)
+        private static string GetValueForAttribute(string item, string attributeName)
         {
             var result = new Regex(attributeName + @"=\""([^""]*)\""", RegexOptions.Singleline).Match(item);
 
-            if (result == null || result.Groups.Count < 1)
-            {
-                return string.Empty;
-            }
-
-            return result.Groups[1].Value;
+            return result.Groups.Count < 1 ? string.Empty : result.Groups[1].Value;
         }
     }
 }

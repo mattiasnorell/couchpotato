@@ -130,7 +130,7 @@ namespace Couchpotato.Business.Playlist
         }
 
 
-        private List<PlaylistItem> GetSelectedGroups(Dictionary<string, PlaylistItem> playlistItems)
+        private IEnumerable<PlaylistItem> GetSelectedGroups(Dictionary<string, PlaylistItem> playlistItems)
         {
             var streams = new List<PlaylistItem>();
 
@@ -175,7 +175,7 @@ namespace Couchpotato.Business.Playlist
             if (cacheResult != null)
             {
                 _logging.Print("- Loaded playlist from cache");
-                return streamToArray(cacheResult);
+                return StreamToArray(cacheResult);
             }
 
             var downloadResult = _fileHandler.GetSource(path);
@@ -183,7 +183,7 @@ namespace Couchpotato.Business.Playlist
             {
                 _logging.Print($"- Download playlist from {path}");
                 _cacheProvider.Set(path, downloadResult);
-                return streamToArray(downloadResult);
+                return StreamToArray(downloadResult);
             }
 
 
@@ -191,7 +191,7 @@ namespace Couchpotato.Business.Playlist
             return new string[] { };
         }
 
-        private string[] streamToArray(Stream stream)
+        private static string[] StreamToArray(Stream stream)
         {
             stream.Seek(0, SeekOrigin.Begin);
 
@@ -213,8 +213,7 @@ namespace Couchpotato.Business.Playlist
         {
             _logging.Print($"Writing M3U-file to {path}/{fileName}");
 
-            var content = new List<string>();
-            content.Add("#EXTM3U");
+            var content = new List<string> { "#EXTM3U" };
 
             foreach (var channel in channels.OrderBy(e => e.Order))
             {

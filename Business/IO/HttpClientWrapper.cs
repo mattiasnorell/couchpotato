@@ -17,7 +17,8 @@ namespace Couchpotato.Business.IO
         {
             _httpClient = httpClient;
 
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36");
         }
 
         public async Task<Stream> Get(string url)
@@ -38,27 +39,27 @@ namespace Couchpotato.Business.IO
 
         public async Task<bool> Validate(string url, string[] mediaTypes, int minimumContentLength = 100000)
         {
-
             try
             {
                 using (var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
                 {
                     response.EnsureSuccessStatusCode();
 
+                    var shouldContinue = true;
                     using (var contentStream = await response.Content.ReadAsStreamAsync())
                     {
-
-                        if(mediaTypes.Length > 0 && !mediaTypes.Any(e => e == response.Content.Headers.ContentType.MediaType)){
+                        if (mediaTypes.Length > 0 &&
+                            !mediaTypes.Any(e => e == response.Content.Headers.ContentType.MediaType))
+                        {
                             return false;
                         }
 
                         var bytesRead = 0L;
                         var buffer = new byte[8192];
-                        var shouldContinue = true;
 
                         do
                         {
-                            var bytes = await contentStream.ReadAsync(buffer, 0, buffer.Length);
+                            var bytes = await contentStream.ReadAsync(buffer);
 
                             if (bytes == 0)
                             {
@@ -75,8 +76,7 @@ namespace Couchpotato.Business.IO
                             {
                                 bytesRead += bytes;
                             }
-                        }
-                        while (shouldContinue);
+                        } while (shouldContinue);
                     }
                 }
 

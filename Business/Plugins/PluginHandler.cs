@@ -15,12 +15,12 @@ namespace Couchpotato.Business.Plugins
 {
     public class PluginHandler : IPluginHandler
     {
-        private string _pluginPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "plugins");
-        private Dictionary<PluginType, List<IPlugin>> _registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
+        private readonly string _pluginPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location) ?? string.Empty, "plugins");
+        private readonly Dictionary<PluginType, List<IPlugin>> _registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
         private readonly ILogging _logging;
         private readonly IFileHandler _fileHandler;
         private readonly IConfiguration _configuration;
-        private dynamic _pluginSettings;
+        private readonly dynamic _pluginSettings;
 
         public PluginHandler(
             ILogging logging,
@@ -41,7 +41,7 @@ namespace Couchpotato.Business.Plugins
             _pluginSettings = LoadPluginSettings();
         }
 
-        public dynamic LoadPluginSettings()
+        private dynamic LoadPluginSettings()
         {
             var pluginConfigPath = _configuration.GetSection($"pluginConfigPath")?.Value;
 
@@ -52,14 +52,7 @@ namespace Couchpotato.Business.Plugins
 
             var config = _fileHandler.ReadTextFile(pluginConfigPath);
 
-            if (config != null)
-            {
-                return JsonConvert.DeserializeObject<dynamic>(config);
-            }
-            else
-            {
-                return null;
-            }
+            return config != null ? JsonConvert.DeserializeObject<dynamic>(config) : null;
         }
 
         public void Run(PluginType pluginType, PlaylistResult playlist = null, EpgResult epg = null)
@@ -87,7 +80,6 @@ namespace Couchpotato.Business.Plugins
 
         public void Register()
         {
-            var assemblies = new List<Assembly>();
             var pluginType = typeof(IPlugin);
             var pluginTypes = new List<Type>();
             var pluginsToActivate = new List<PluginToActivate>();
@@ -101,11 +93,7 @@ namespace Couchpotato.Business.Plugins
 
             var plugins = Directory.GetFiles(_pluginPath, "*.dll");
 
-            foreach (var plugin in plugins)
-            {
-                var assembly = Assembly.LoadFrom(plugin);
-                assemblies.Add(assembly);
-            }
+            var assemblies = plugins.Select(Assembly.LoadFrom).ToList();
 
             foreach (var assembly in assemblies)
             {
