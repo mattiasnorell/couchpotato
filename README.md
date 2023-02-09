@@ -5,11 +5,8 @@ Customize and aggregate M3U and EPG files
 ```json
 {
     "pluginPath" : "PATH_TO_PLUGIN_FOLDER",
-    "plugins": {
-        "PluginName": {
-            "Setting": "lorem ipsum dolor sit amet"
-        }
-    }
+    "logPath": "PATH_TO_LOG_FILE",
+    "consoleOutput": "verbose"
 }
 ```
 
