@@ -85,10 +85,9 @@ namespace Couchpotato.Business.Playlist
 
             foreach (var channel in _settingsProvider.Streams)
             {
-                if (channels.ContainsKey(channel.ChannelId))
+                if (channels.TryGetValue(channel.ChannelId, out var value))
                 {
-                    var channelSetting = channels[channel.ChannelId];
-                    var channelItem = _playlistItemMapper.Map(channelSetting, channel);
+                    var channelItem = _playlistItemMapper.Map(value, channel);
                     streams.Add(channelItem);
                 }
                 else

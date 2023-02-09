@@ -43,18 +43,18 @@ namespace Couchpotato.Business.Plugins
             _pluginSettings = LoadPluginSettings();
         }
 
-        private dynamic LoadPluginSettings()
+        public void Register()
         {
-            var pluginConfigPath = _configuration.GetSection($"pluginConfigPath")?.Value;
-
-            if (string.IsNullOrEmpty(pluginConfigPath))
+            if (!Directory.Exists(_pluginPath))
             {
-                pluginConfigPath = Path.Combine(_pluginPath, "config.json");
+                _logging.Warn($"Plugin folder {_pluginPath} not found");
+
+                return;
             }
 
-            var config = _fileHandler.ReadTextFile(pluginConfigPath);
-
-            return config != null ? JsonConvert.DeserializeObject<dynamic>(config) : new Dictionary<string, dynamic>();
+            var assemblies = LoadAssemblies();
+            var pluginsToActivate = GetPluginsForActivation(assemblies);
+            ActivatePlugins(pluginsToActivate);
         }
 
         public void Run(PluginType pluginType, PlaylistResult playlist = null, EpgResult epg = null)
@@ -80,43 +80,34 @@ namespace Couchpotato.Business.Plugins
             }
         }
 
-        public void Register()
+        private dynamic LoadPluginSettings()
+        {
+            var pluginConfigPath = _configuration.GetSection("pluginConfigPath")?.Value ??
+                                   Path.Combine(_pluginPath, "config.json");
+            var config = _fileHandler.ReadTextFile(pluginConfigPath);
+
+            return config != null ? JsonConvert.DeserializeObject<dynamic>(config) : new Dictionary<string, dynamic>();
+            ;
+        }
+
+        private List<Type> LoadAssemblies()
         {
             var pluginType = typeof(IPlugin);
-            var pluginTypes = new List<Type>();
+            var pluginTypes = Directory.GetFiles(_pluginPath, "*.dll")
+                .Select(Assembly.LoadFrom)
+                .Where(a => a != null)
+                .SelectMany(a => a.GetTypes())
+                .Where(t => pluginType.FullName != null && !t.IsInterface && !t.IsAbstract &&
+                            t.GetInterface(pluginType.FullName) != null)
+                .ToList();
+
+            return pluginTypes;
+        }
+
+        private IEnumerable<PluginToActivate> GetPluginsForActivation(List<Type> pluginTypes)
+        {
             var pluginsToActivate = new List<PluginToActivate>();
-
-            if (!Directory.Exists(_pluginPath))
-            {
-                _logging.Warn($"Plugin folder {_pluginPath} not found");
-
-                return;
-            }
-
-            var assemblies = Directory.GetFiles(_pluginPath, "*.dll").Select(Assembly.LoadFrom).ToList();
-
-            foreach (var assembly in assemblies)
-            {
-                if (assembly == null)
-                {
-                    continue;
-                }
-
-                foreach (var assemblyType in assembly.GetTypes())
-                {
-                    if (assemblyType.IsInterface || assemblyType.IsAbstract)
-                    {
-                        continue;
-                    }
-
-                    if (pluginType.FullName != null && assemblyType.GetInterface(pluginType.FullName) != null)
-                    {
-                        pluginTypes.Add(assemblyType);
-                    }
-                }
-            }
-
-            foreach (var type in pluginTypes)
+            foreach (var type in LoadAssemblies())
             {
                 var attribute =
                     (CouchpotatoPluginAttribute)type.GetCustomAttribute(typeof(CouchpotatoPluginAttribute), false);
@@ -139,6 +130,11 @@ namespace Couchpotato.Business.Plugins
                 pluginsToActivate.Add(new PluginToActivate(attribute.EventName, type, settings, attribute.Priority));
             }
 
+            return pluginsToActivate;
+        }
+
+        private void ActivatePlugins(IEnumerable<PluginToActivate> pluginsToActivate)
+        {
             foreach (var pluginToActivate in pluginsToActivate.OrderBy(e => e.Priority))
             {
                 var plugin = (IPlugin)Activator.CreateInstance(pluginToActivate.Type, pluginToActivate.Settings);
