@@ -6,7 +6,7 @@ namespace Couchpotato.Business.IO
     public interface IFileHandler
     {
         Stream GetSource(string path);
-        string WriteTextFile(string path, string fileName, string[] content);
+        string WriteTextFile(string path, string fileName, string content);
         string WriteXmlFile<T>(string path, string fileName, T content);
         void WriteStream(string path, Stream stream);
         Stream ReadStream(string path);

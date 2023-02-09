@@ -22,7 +22,7 @@ namespace Couchpotato.Business.Validation
             IHttpClientWrapper httpClientWrapper,
             IPlaylistItemMapper playlistItemMapper,
             ISettingsProvider settingsProvider
-            )
+        )
         {
             _logging = logging;
             _httpClientWrapper = httpClientWrapper;
@@ -35,7 +35,7 @@ namespace Couchpotato.Business.Validation
             _logging.Print("\nValidating streams. This might disconnect all active streams.");
             Validate(streams);
 
-            if (!streams.Any(e => !e.IsValid))
+            if (streams.All(e => e.IsValid))
             {
                 return;
             }
@@ -58,7 +58,8 @@ namespace Couchpotato.Business.Validation
             }
 
             // Temporary workaround
-            if (!_settingsProvider.Validation.ShowInvalid){
+            if (!_settingsProvider.Validation.ShowInvalid)
+            {
                 streams = streams.Where(e => e.IsValid).ToList();
             }
         }
@@ -95,15 +96,14 @@ namespace Couchpotato.Business.Validation
         {
             try
             {
-                return _httpClientWrapper.Validate(url, _settingsProvider.Validation.ContentTypes, _settingsProvider.Validation.MinimumContentLength).Result;
+                return _httpClientWrapper.Validate(url, _settingsProvider.Validation.ContentTypes,
+                    _settingsProvider.Validation.MinimumContentLength).Result;
             }
             catch (Exception)
             {
                 return false;
             }
         }
-
-
 
         private PlaylistItem GetFallbackStream(string tvgName, Dictionary<string, PlaylistItem> playlistItems)
         {
@@ -114,22 +114,20 @@ namespace Couchpotato.Business.Validation
             }
 
             var fallbackStream = GetDefaultFallback(tvgName, playlistItems);
-            if (fallbackStream != null)
-            {
-                return fallbackStream;
-            }
-
-            return null;
+            return fallbackStream ?? null;
         }
 
-        public PlaylistItem GetSourceFallback(string id, Dictionary<string, PlaylistItem> channels){
+        public PlaylistItem GetSourceFallback(string id, Dictionary<string, PlaylistItem> channels)
+        {
             var fallbacks = GetFallbacks(id);
 
-            if(fallbacks == null){
+            if (fallbacks == null)
+            {
                 return null;
             }
 
-            foreach(var fallback in fallbacks.Value){
+            foreach (var fallback in fallbacks.Value)
+            {
                 var fallbackTvgName = id.Replace(fallbacks.Key, fallback);
 
                 if (!channels.ContainsKey(fallbackTvgName))
@@ -143,29 +141,22 @@ namespace Couchpotato.Business.Validation
             return null;
         }
 
-        public UserSettingsValidationFallback GetFallbacks(string originalTvgName){
-            if (_settingsProvider.Validation.DefaultFallbacks == null)
-            {
-                return null;
-            }
-
-            var tvgNames = _settingsProvider.Validation.DefaultFallbacks.FirstOrDefault(e => originalTvgName.Contains(e.Key));
+        private UserSettingsValidationFallback GetFallbacks(string originalTvgName)
+        {
+            var tvgNames =
+                _settingsProvider.Validation.DefaultFallbacks?.FirstOrDefault(e => originalTvgName.Contains(e.Key));
 
 
-            if (tvgNames == null || tvgNames.Value == null)
-            {
-                return null;
-            }
-
-            return tvgNames;
+            return tvgNames?.Value == null ? null : tvgNames;
         }
-        
+
         private PlaylistItem GetDefaultFallback(string originalTvgName, Dictionary<string, PlaylistItem> playlistItems)
         {
-
+            if (playlistItems == null) throw new ArgumentNullException(nameof(playlistItems));
             var tvgNames = GetFallbacks(originalTvgName);
 
-            if(tvgNames == null){
+            if (tvgNames == null)
+            {
                 return null;
             }
 
@@ -187,12 +178,10 @@ namespace Couchpotato.Business.Validation
 
                 var channelSetting = _settingsProvider.Streams.FirstOrDefault(e => e.ChannelId == originalTvgName);
 
-                if(channelSetting == null){
-                    return null;
-                }
-                
-                return _playlistItemMapper.Map(fallback, channelSetting);
-            };
+                return channelSetting == null ? null : _playlistItemMapper.Map(fallback, channelSetting);
+            }
+
+            ;
 
             return null;
         }
@@ -200,14 +189,13 @@ namespace Couchpotato.Business.Validation
         private PlaylistItem GetSpecificFallback(string tvgName, Dictionary<string, PlaylistItem> playlistItems)
         {
             var channelSetting = _settingsProvider.Streams.FirstOrDefault(e => e.ChannelId == tvgName);
-            if (channelSetting == null || channelSetting.Fallbacks == null)
+            if (channelSetting?.Fallbacks == null)
             {
                 return null;
             }
 
             foreach (var fallbackChannelId in channelSetting.Fallbacks)
             {
-
                 if (!playlistItems.ContainsKey(fallbackChannelId))
                 {
                     continue;
@@ -225,11 +213,9 @@ namespace Couchpotato.Business.Validation
                 {
                     return _playlistItemMapper.Map(fallbackChannel, channelSetting);
                 }
-
-            };
+            }
 
             return null;
         }
-
     }
 }

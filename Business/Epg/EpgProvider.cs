@@ -76,53 +76,49 @@ namespace Couchpotato.Business
 
         private EpgList Parse(string path)
         {
-            using (var stream = _fileHandler.GetSource(path))
-            {
+            using var stream = _fileHandler.GetSource(path);
+            var streamValue = stream;
 
-                var streamValue = stream;
+            if (streamValue == null)
+            {
+                if (!_settingsProvider.Epg.Cache.Enabled)
+                {
+                    return null;
+                }
+
+                streamValue = _cacheProvider.Get(path, _settingsProvider.Epg.Cache.Lifespan);
 
                 if (streamValue == null)
                 {
-
-                    if (!_settingsProvider.Epg.Cache.Enabled)
-                    {
-                        return null;
-                    }
-
-                    streamValue = _cacheProvider.Get(path, _settingsProvider.Epg.Cache.Lifespan);
-
-                    if (streamValue == null)
-                    {
-                        return null;
-                    }
-
-                    _logging.Info($"  Using cached value for {path}");
-                }
-
-                try
-                {
-                    var xRoot = new XmlRootAttribute()
-                    {
-                        ElementName = "tv",
-                        IsNullable = true
-                    };
-
-                    var serializer = new XmlSerializer(typeof(EpgList), xRoot);
-                    var returnValue = serializer.Deserialize(streamValue) as EpgList;
-
-                    if (_settingsProvider.Epg.Cache.Enabled)
-                    {
-                        _cacheProvider.Set(path, streamValue);
-                    }
-
-                    return returnValue;
-                }
-                catch (Exception ex)
-                {
-                    _logging.Error("Couldn't deserialize the EPG-list", ex);
                     return null;
                 }
-            };
+
+                _logging.Info($"  Using cached value for {path}");
+            }
+
+            try
+            {
+                var xRoot = new XmlRootAttribute()
+                {
+                    ElementName = "tv",
+                    IsNullable = true
+                };
+
+                var serializer = new XmlSerializer(typeof(EpgList), xRoot);
+                var returnValue = serializer.Deserialize(streamValue) as EpgList;
+
+                if (_settingsProvider.Epg.Cache.Enabled)
+                {
+                    _cacheProvider.Set(path, streamValue);
+                }
+
+                return returnValue;
+            }
+            catch (Exception ex)
+            {
+                _logging.Error("Couldn't deserialize the EPG-list", ex);
+                return null;
+            }
         }
 
         private EpgResult Filter(EpgList input)
@@ -154,29 +150,11 @@ namespace Couchpotato.Business
                     continue;
                 }
 
-                var epgChannel = new EpgChannel()
-                {
-                    Id = channel.Id,
-                    DisplayName = settingsChannel.FriendlyName ?? channel.DisplayName,
-                    Url = channel.Url
-                };
-
-                epgFile.Channels.Add(epgChannel);
+                epgFile.Channels.Add(Map(channel, settingsChannel));
 
                 foreach (var program in input.Programs.Where(e => e.Channel == channel.Id))
                 {
-                    var epgProgram = new EpgProgram()
-                    {
-                        Channel = program.Channel,
-                        Desc = program.Desc,
-                        EpisodeNumber = program.EpisodeNumber,
-                        Lang = program.Lang,
-                        Start = string.IsNullOrEmpty(settingsChannel.EpgTimeshift) ? program.Start : AddTimeshift(program.Start, settingsChannel.EpgTimeshift),
-                        Stop = string.IsNullOrEmpty(settingsChannel.EpgTimeshift) ? program.Stop : AddTimeshift(program.Stop, settingsChannel.EpgTimeshift),
-                        Title = program.Title
-                    };
-
-                    epgFile.Programs.Add(epgProgram);
+                    epgFile.Programs.Add(Map(program, settingsChannel));
                 }
             }
 
@@ -187,19 +165,47 @@ namespace Couchpotato.Business
                 foreach (var streamWithoutEpg in streamsWithoutEpg)
                 {
                     result.StreamsWithoutEpg.Add(streamWithoutEpg.ChannelId);
-                    _logging.Warn($"- { streamWithoutEpg.FriendlyName}");
+                    _logging.Warn($"- {streamWithoutEpg.FriendlyName}");
                 }
             }
 
             result.Items = epgFile;
-            
+
             return result;
         }
 
-        private string AddTimeshift(string time, string timeshift)
+        private EpgChannel Map(EpgChannel channel, UserSettingsStream settingsChannel)
+        {
+            return new EpgChannel()
+            {
+                Id = channel.Id,
+                DisplayName = settingsChannel.FriendlyName ?? channel.DisplayName,
+                Url = channel.Url
+            };
+        }
+        
+        private EpgProgram Map(EpgProgram program, UserSettingsStream settingsChannel)
+        {
+            return new EpgProgram()
+            {
+                Channel = program.Channel,
+                Desc = program.Desc,
+                EpisodeNumber = program.EpisodeNumber,
+                Lang = program.Lang,
+                Start = string.IsNullOrEmpty(settingsChannel.EpgTimeshift)
+                    ? program.Start
+                    : AddTimeshift(program.Start, settingsChannel.EpgTimeshift),
+                Stop = string.IsNullOrEmpty(settingsChannel.EpgTimeshift)
+                    ? program.Stop
+                    : AddTimeshift(program.Stop, settingsChannel.EpgTimeshift),
+                Title = program.Title
+            };
+        }
+
+        private static string AddTimeshift(string time, string timeshift)
         {
             var originalTimeshift = time.Substring(time.Length - 5, 5);
-            var regExPattern = @"\+[0-9]+";
+            const string regExPattern = @"\+[0-9]+";
 
             if (!Regex.IsMatch(originalTimeshift, regExPattern) || !Regex.IsMatch(timeshift, regExPattern))
             {

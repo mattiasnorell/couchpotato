@@ -21,23 +21,17 @@ namespace Couchpotato.Business.Compression
             var sourceFile = new FileInfo(path);
             var targetFileName = new FileInfo($"{sourceFile.FullName}.gz");
 
-            using (var sourceFileStream = sourceFile.OpenRead())
+            using var sourceFileStream = File.Open(sourceFile.FullName, FileMode.Open, FileAccess.Read);
+            using var targetFileStream = targetFileName.Create();
+            using var gzipStream = new GZipStream(targetFileStream, CompressionMode.Compress);
+            try
             {
-                using (var targetFileStream = targetFileName.Create())
-                {
-                    using (var gzipStream = new GZipStream(targetFileStream, CompressionMode.Compress))
-                    {
-                        try
-                        {
-                            sourceFileStream.CopyTo(gzipStream);
-                            _logging.Print($"Saving compressed file to {targetFileName}");
-                        }
-                        catch (Exception ex)
-                        {
-                            _logging.Error($"Compression failed", ex);
-                        }
-                    }
-                }
+                sourceFileStream.CopyTo(gzipStream);
+                _logging.Print($"Saving compressed file to {targetFileName}");
+            }
+            catch (Exception ex)
+            {
+                _logging.Error($"Compression failed", ex);
             }
         }
 

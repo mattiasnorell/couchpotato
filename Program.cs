@@ -13,6 +13,8 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
 using System.Reflection;
 using System;
+using couchpotato;
+using Serilog;
 
 namespace Couchpotato
 {
@@ -21,12 +23,20 @@ namespace Couchpotato
         private static void Main(string[] args)
         {
             var config = new ConfigurationBuilder()
-                .SetBasePath(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location) ?? throw new InvalidOperationException())
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+                .SetBasePath(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location) ??
+                             throw new InvalidOperationException())
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false).Build();
+
+
+            var logPath = config.GetSection("logPath").Value ?? Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location) ?? string.Empty, "log.txt");
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.File(logPath)
+                .MinimumLevel.Debug()
+                .CreateLogger(); 
             
             var services = new ServiceCollection()
                 .AddHttpClient()
-                .AddSingleton<IConfiguration>(config.Build())
+                .AddSingleton<IConfiguration>(config)
                 .AddSingleton<IApplication, Application>()
                 .AddSingleton<ICompression, Compression>()
                 .AddSingleton<IPlaylistProvider, PlaylistProvider>()
@@ -46,7 +56,6 @@ namespace Couchpotato
                 .AddScoped<ISettingsProvider, SettingsProvider>()
                 .BuildServiceProvider();
 
-            
 
             var app = services.GetService<IApplication>();
             app.Run(args);

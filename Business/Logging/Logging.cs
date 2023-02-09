@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Extensions.Configuration;
+using Serilog;
 
 namespace Couchpotato.Business.Logging {
 
@@ -26,7 +27,7 @@ namespace Couchpotato.Business.Logging {
             Console.WriteLine(message);
             
             if(exception != null){
-                Console.WriteLine($"Exception: \n{exception}");
+                Log.Error(exception, message);
             }
             
             Console.ForegroundColor = ConsoleColor.White;

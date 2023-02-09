@@ -23,84 +23,16 @@ namespace Couchpotato.Business.Settings
             _logging = logging;
         }
 
-        public string Source
-        {
-            get
-            {
-                return _settings?.M3uPath ?? null;
-            }
-        }
-
-        public string DefaultGroup
-        {
-            get
-            {
-                return _settings.DefaultGroup;
-            }
-        }
-
-        public string OutputPath
-        {
-            get
-            {
-                return _settings.OutputPath;
-            }
-        }
-
-        public string OutputFilename
-        {
-            get
-            {
-                return _settings.OutputFilename ?? null;
-            }
-        }
-
-        public bool Compress
-        {
-            get
-            {
-                return _settings.Compress;
-            }
-        }
-        public UserSettingsEpg Epg
-        {
-            get
-            {
-                return _settings.Epg;
-            }
-        }
-
-        public List<UserSettingsStream> Streams
-        {
-            get
-            {
-                return _settings.Streams;
-            }
-        }
-
-        public List<UserSettingsGroup> Groups
-        {
-            get
-            {
-                return _settings.Groups;
-            }
-        }
-
-        public UserSettingsValidation Validation
-        {
-            get
-            {
-                return _settings.Validation;
-            }
-        }
-
-        public int PlaylistCacheDuration
-        {
-            get
-            {
-                return _settings.PlaylistCacheDuration;
-            }
-        }
+        public string Source => _settings?.M3uPath ?? null;
+        public string DefaultGroup => _settings.DefaultGroup;
+        public string OutputPath => _settings.OutputPath;
+        public string OutputFilename => _settings.OutputFilename ?? null;
+        public bool Compress => _settings.Compress;
+        public UserSettingsEpg Epg => _settings.Epg;
+        public List<UserSettingsStream> Streams => _settings.Streams;
+        public List<UserSettingsGroup> Groups => _settings.Groups;
+        public UserSettingsValidation Validation => _settings.Validation;
+        public int PlaylistCacheDuration => _settings.PlaylistCacheDuration;
 
         public bool Load(string path)
         {
@@ -110,17 +42,15 @@ namespace Couchpotato.Business.Settings
 
             if (file == null)
             {
-                _logging.Error($"- Couldn't load settingsfile from {path}");
+                _logging.Error($"- Couldn't load settings file from {path}");
                 return false;
             }
 
-            using (var responseReader = new StreamReader(file))
-            {
-                var response = responseReader.ReadToEnd();
-                _settings = JsonConvert.DeserializeObject<UserSettings>(response);
+            using var responseReader = new StreamReader(file);
+            var response = responseReader.ReadToEnd();
+            _settings = JsonConvert.DeserializeObject<UserSettings>(response);
 
-                return _settings != null;
-            }
+            return _settings != null;
         }
     }
 }

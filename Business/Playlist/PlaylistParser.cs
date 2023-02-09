@@ -41,28 +41,32 @@ namespace Couchpotato.Business.Playlist
                 var tvgName = GetValueForAttribute(item, "tvg-name");
                 if (streams.ContainsKey(tvgName)) continue;
 
-                var playlistItem = new PlaylistItem()
-                {
-                    TvgName = tvgName,
-                    GroupTitle = GetValueForAttribute(item, "group-title"),
-                    TvgId = GetValueForAttribute(item, "tvg-id"),
-                    TvgLogo = GetValueForAttribute(item, "tvg-logo"),
-                    Url = streamUrl
-                };
+                streams.Add(tvgName, Map(tvgName, item, streamUrl));
 
-                streams.Add(tvgName, playlistItem);
-                
-                   _logging.Progress($"Crunching playlist data", i, numberOfLines - 2);
+                _logging.Progress($"Crunching playlist data", i, numberOfLines - 2);
             }
 
             return streams;
         }
 
+        private static PlaylistItem Map(string tvgName, string item, string streamUrl)
+        {
+            return new PlaylistItem()
+            {
+                TvgName = tvgName,
+                GroupTitle = GetValueForAttribute(item, "group-title"),
+                TvgId = GetValueForAttribute(item, "tvg-id"),
+                TvgLogo = GetValueForAttribute(item, "tvg-logo"),
+                Url = streamUrl
+            };
+        }
+
         private static string GetValueForAttribute(string item, string attributeName)
         {
-            var result = new Regex(attributeName + @"=\""([^""]*)\""", RegexOptions.Singleline).Match(item);
+            var pattern = attributeName + @"=\""([^""]*)\""";
+            var match = Regex.Match(item, pattern, RegexOptions.Singleline);
 
-            return result.Groups.Count < 1 ? string.Empty : result.Groups[1].Value;
+            return match.Success ? match.Groups[1].Value : string.Empty;
         }
     }
 }

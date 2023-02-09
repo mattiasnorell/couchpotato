@@ -7,6 +7,7 @@ using Couchpotato.Core.Playlist;
 using Couchpotato.Business.IO;
 using Couchpotato.Business.Settings;
 using System.IO;
+using System.Text;
 using Couchpotato.Business.Cache;
 
 namespace Couchpotato.Business.Playlist
@@ -37,7 +38,6 @@ namespace Couchpotato.Business.Playlist
             _playlistItemMapper = playlistItemMapper;
             _settingsProvider = settingsProvider;
             _cacheProvider = cacheProvider;
-
         }
 
         public PlaylistResult GetPlaylist()
@@ -121,7 +121,7 @@ namespace Couchpotato.Business.Playlist
                 foreach (var brokenStream in brokenStreams)
                 {
                     result.Missing.Add(brokenStream);
-                    _logging.Warn($"- { brokenStream }");
+                    _logging.Warn($"- {brokenStream}");
                 }
             }
 
@@ -132,45 +132,31 @@ namespace Couchpotato.Business.Playlist
 
         private IEnumerable<PlaylistItem> GetSelectedGroups(Dictionary<string, PlaylistItem> playlistItems)
         {
-            var streams = new List<PlaylistItem>();
-
-            foreach (var group in _settingsProvider.Groups)
+            return _settingsProvider.Groups.SelectMany(group =>
             {
                 var groupItems = playlistItems?.Values.Where(e => e.GroupTitle == group.GroupId).ToList();
 
-                if (groupItems == null || !groupItems.Any())
+                if (groupItems == null)
                 {
-                    continue;
+                    return Enumerable.Empty<PlaylistItem>();
                 }
 
-                foreach (var groupItem in groupItems)
-                {
-
-                    if (group.Exclude != null && group.Exclude.Any(e => e == groupItem.TvgName))
-                    {
-                        continue;
-                    }
-
-                    var stream = new PlaylistItem()
+                return groupItems
+                    .Where(groupItem => group.Exclude == null || !group.Exclude.Contains(groupItem.TvgName))
+                    .Select((groupItem, index) => new PlaylistItem
                     {
                         TvgName = groupItem.TvgName,
                         TvgId = groupItem.TvgId,
                         TvgLogo = groupItem.TvgLogo,
                         Url = groupItem.Url,
                         GroupTitle = group.FriendlyName ?? group.GroupId,
-                        Order = _settingsProvider.Streams.Count() + groupItems.IndexOf(groupItem)
-                    };
-
-                    streams.Add(stream);
-                }
-            }
-
-            return streams;
+                        Order = _settingsProvider.Streams.Count + groupItems.IndexOf(groupItem)
+                    });
+            });
         }
 
         private string[] Load(string path)
         {
-
             var cacheResult = _cacheProvider.Get(path, _settingsProvider.PlaylistCacheDuration);
             if (cacheResult != null)
             {
@@ -195,34 +181,27 @@ namespace Couchpotato.Business.Playlist
         {
             stream.Seek(0, SeekOrigin.Begin);
 
-            using (var sr = new StreamReader(stream))
-            {
-                string line;
-                var list = new List<string>();
-
-                while ((line = sr.ReadLine()) != null)
-                {
-                    list.Add(line);
-                }
-
-                return list.ToArray();
-            }
+            using var sr = new StreamReader(stream);
+            var content = sr.ReadToEnd();
+            return content.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
         }
 
         public string Save(string path, string fileName, List<PlaylistItem> channels)
         {
             _logging.Print($"Writing M3U-file to {path}/{fileName}");
 
-            var content = new List<string> { "#EXTM3U" };
+            var builder = new StringBuilder();
+            builder.AppendLine("#EXTM3U");
 
             foreach (var channel in channels.OrderBy(e => e.Order))
             {
                 var name = channel.FriendlyName ?? channel.TvgName;
-                content.Add($"#EXTINF:-1 tvg-id=\"{channel.TvgId}\" tvg-name=\"{channel.TvgName}\" tvg-logo=\"{channel.TvgLogo}\" group-title=\"{channel.GroupTitle}\",{name}");
-                content.Add(channel.Url);
+                builder.AppendLine(
+                    $"#EXTINF:-1 tvg-id=\"{channel.TvgId}\" tvg-name=\"{channel.TvgName}\" tvg-logo=\"{channel.TvgLogo}\" group-title=\"{channel.GroupTitle}\",{name}");
+                builder.AppendLine(channel.Url);
             }
 
-            return _fileHandler.WriteTextFile(path, fileName, content.ToArray());
+            return _fileHandler.WriteTextFile(path, fileName, builder.ToString());
         }
     }
 }

@@ -26,8 +26,7 @@ namespace Couchpotato.Business.IO
 
         public DateTime GetModifiedDate(string path)
         {
-            var fileInfo = new FileInfo(path);
-            return fileInfo.LastWriteTime;
+            return new FileInfo(path).LastWriteTime;
         }
 
         public string GetFilePath(string path, string fileName)
@@ -68,25 +67,20 @@ namespace Couchpotato.Business.IO
         {
             var outputPath = GetFilePath(path, fileName);
             var writer = new XmlSerializer(typeof(T));
-            var file = File.Create(outputPath);
+            using var file = File.Create(outputPath);
 
             _logging.Print($"Writing EPG-file to {outputPath}");
 
             writer.Serialize(file, content);
-            file.Close();
 
             return outputPath;
         }
 
-        public string WriteTextFile(string path, string fileName, string[] content)
+        public string WriteTextFile(string path, string fileName, string content)
         {
             var outputPath = GetFilePath(path, fileName);
 
-            using var writeFile = new StreamWriter(outputPath, false, new UTF8Encoding(true));
-            foreach (var row in content)
-            {
-                writeFile.WriteLine(row);
-            }
+            File.WriteAllText(outputPath, content, Encoding.UTF8);
 
             return outputPath;
         }

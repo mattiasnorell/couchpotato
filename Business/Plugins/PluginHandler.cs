@@ -15,8 +15,10 @@ namespace Couchpotato.Business.Plugins
 {
     public class PluginHandler : IPluginHandler
     {
-        private readonly string _pluginPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location) ?? string.Empty, "plugins");
-        private readonly Dictionary<PluginType, List<IPlugin>> _registeredPlugins = new Dictionary<PluginType, List<IPlugin>>();
+        private readonly string _pluginPath =
+            Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location) ?? string.Empty, "plugins");
+
+        private readonly Dictionary<PluginType, List<IPlugin>> _registeredPlugins = new();
         private readonly ILogging _logging;
         private readonly IFileHandler _fileHandler;
         private readonly IConfiguration _configuration;
@@ -73,7 +75,7 @@ namespace Couchpotato.Business.Plugins
                 }
                 catch (Exception e)
                 {
-                    _logging.Error($"Error running plugin {plugin.GetType().Name}", e);
+                    _logging.Error($"Error running plugin {plugin.GetType().Name}. See log for more information.", e);
                 }
             }
         }
@@ -91,9 +93,7 @@ namespace Couchpotato.Business.Plugins
                 return;
             }
 
-            var plugins = Directory.GetFiles(_pluginPath, "*.dll");
-
-            var assemblies = plugins.Select(Assembly.LoadFrom).ToList();
+            var assemblies = Directory.GetFiles(_pluginPath, "*.dll").Select(Assembly.LoadFrom).ToList();
 
             foreach (var assembly in assemblies)
             {
@@ -102,26 +102,24 @@ namespace Couchpotato.Business.Plugins
                     continue;
                 }
 
-                var types = assembly.GetTypes();
-                foreach (var assemblyType in types)
+                foreach (var assemblyType in assembly.GetTypes())
                 {
                     if (assemblyType.IsInterface || assemblyType.IsAbstract)
                     {
                         continue;
                     }
-                    else
+
+                    if (pluginType.FullName != null && assemblyType.GetInterface(pluginType.FullName) != null)
                     {
-                        if (assemblyType.GetInterface(pluginType.FullName) != null)
-                        {
-                            pluginTypes.Add(assemblyType);
-                        }
+                        pluginTypes.Add(assemblyType);
                     }
                 }
             }
 
             foreach (var type in pluginTypes)
             {
-                var attribute = (CouchpotatoPluginAttribute)type.GetCustomAttribute(typeof(CouchpotatoPluginAttribute), false);
+                var attribute =
+                    (CouchpotatoPluginAttribute)type.GetCustomAttribute(typeof(CouchpotatoPluginAttribute), false);
 
                 if (attribute == null)
                 {
@@ -130,7 +128,8 @@ namespace Couchpotato.Business.Plugins
 
                 var settings = GetSettings(type.Name);
 
-                var requireSettings = (RequireSettingsAttribute)type.GetCustomAttribute(typeof(RequireSettingsAttribute), false) != null;
+                var requireSettings =
+                    (RequireSettingsAttribute)type.GetCustomAttribute(typeof(RequireSettingsAttribute), false) != null;
                 if (settings.Count == 0 && requireSettings)
                 {
                     _logging.Info($"PluginHandler :: Can't load {type.Name}, settings not found");
@@ -138,7 +137,6 @@ namespace Couchpotato.Business.Plugins
                 }
 
                 pluginsToActivate.Add(new PluginToActivate(attribute.EventName, type, settings, attribute.Priority));
-
             }
 
             foreach (var pluginToActivate in pluginsToActivate.OrderBy(e => e.Priority))
@@ -187,10 +185,10 @@ namespace Couchpotato.Business.Plugins
             this.Priority = priority;
         }
 
-        public Type Type { get; set; }
-        public PluginType EventName { get; set; }
+        public Type Type { get; }
+        public PluginType EventName { get; }
         public IPlugin Plugin { get; set; }
-        public int Priority { get; set; }
-        public Dictionary<string, object> Settings { get; set; }
+        public int Priority { get; }
+        public Dictionary<string, object> Settings { get; }
     }
 }

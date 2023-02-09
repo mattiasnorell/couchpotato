@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using couchpotato;
 using Couchpotato.Business;
 using Couchpotato.Business.Playlist;
 using Couchpotato.Business.Compression;
@@ -44,7 +45,7 @@ namespace Couchpotato
         {
             if (settingsPaths == null || settingsPaths.Length == 0)
             {
-                _logging.Error($"No settings file(s) found. Please fix.");
+                _logging.Error($"No settings file(s) found.");
 
                 Environment.Exit(0);
             }
@@ -81,7 +82,7 @@ namespace Couchpotato
 
             if (!couldLoadSettings)
             {
-                _logging.Info($"\nNeed settings. Please fix. Thanks.");
+                _logging.Info($"\nCouldn't load settings file.");
                 return;
             }
 
@@ -91,7 +92,7 @@ namespace Couchpotato
 
             if (!channelResult.Items.Any())
             {
-                _logging.Info($"\nNo channels found so no reason to continue. Bye bye.");
+                _logging.Info($"\nNo streams found.");
 
                 return;
             }
@@ -109,9 +110,9 @@ namespace Couchpotato
                 return;
             }
 
-            var outputFilenameM3U = _settingsProvider.OutputFilename ?? "channels";
+            var outputFilenameStreams = _settingsProvider.OutputFilename ?? "streams";
             var outputFilenameEpg = _settingsProvider.OutputFilename ?? "epg";
-            var outputM3UPath = _playlistProvider.Save(outputPath, outputFilenameM3U + ".m3u", channelResult.Items);
+            var outputM3UPath = _playlistProvider.Save(outputPath, outputFilenameStreams + ".m3u", channelResult.Items);
             var outputEpgPath = _epgProvider.Save(outputPath, outputFilenameEpg + ".xml", epgResult.Items);
 
 
