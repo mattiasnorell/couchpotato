@@ -182,7 +182,17 @@ namespace Couchpotato.Business.Playlist
 
             using var sr = new StreamReader(stream);
             var content = sr.ReadToEnd();
-            return content.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            var lines = content
+                .Split('\n')
+                .Select(line => line.TrimEnd('\r'))
+                .ToList();
+
+            while (lines.Count > 0 && string.IsNullOrEmpty(lines[lines.Count - 1]))
+            {
+                lines.RemoveAt(lines.Count - 1);
+            }
+
+            return lines.ToArray();
         }
 
         public string Save(string path, string fileName, List<PlaylistItem> channels)

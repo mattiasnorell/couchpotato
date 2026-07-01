@@ -22,7 +22,7 @@ namespace Couchpotato.Business.Playlist
             var numberOfLines = file.Length;
             _logging.Print($"Crunching playlist data");
 
-            for (var i = 1; i < numberOfLines; i = i + 2)
+            for (var i = 1; i + 1 < numberOfLines; i = i + 2)
             {
                 var item = file[i];
                 var streamUrl = file[i + 1];
